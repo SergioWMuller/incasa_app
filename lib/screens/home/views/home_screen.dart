@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:projeto_incasa_app/screens/home/screens/profile/profile_view.dart';
-import 'package:projeto_incasa_app/screens/home/screens/sales/sales_view.dart';
-import 'package:projeto_incasa_app/screens/home/screens/marketplace/marketplace_view.dart';
+import 'package:projeto_incasa_app/screens/home/views/profile/profile_view.dart';
+import 'package:projeto_incasa_app/screens/home/views/my_store/my_store_view.dart';
+import 'package:projeto_incasa_app/screens/home/views/marketplace/marketplace_view.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         children: const [
           MarketplaceView(), // Página Vitrine
-          SalesView(), // Página Minha Loja
+          MyStoreView(), // Página Minha Loja
           ProfileView(), // Página Perfil
         ],
       ),

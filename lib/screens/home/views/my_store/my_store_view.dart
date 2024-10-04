@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'sales_cubit.dart';
+import 'my_store_cubit.dart';
 
-class SalesView extends StatelessWidget {
-  const SalesView({super.key});
+class MyStoreView extends StatelessWidget {
+  const MyStoreView({super.key});
 
   @override
   Widget build(BuildContext context) {

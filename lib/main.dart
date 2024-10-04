@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_incasa_app/screens/home/screens/home_screen.dart';
+import 'package:projeto_incasa_app/screens/home/views/home_screen.dart';
 
 void main() => runApp(const InCasaApp());
 
@@ -11,7 +11,7 @@ class InCasaApp extends StatelessWidget {
     return MaterialApp(
       title: 'InCasa App',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
       home: const HomeScreen(),

@@ -11,7 +11,17 @@ class ProfileView extends StatelessWidget {
       create: (context) => PerfilCubit(),
       child: Scaffold(
         body: Center(
-          child: Text('Página Perfil'),
+          child: Column(
+            children: [
+              Text('Conversas'),
+              Text('Notificações'),
+              Text('Pagamentos'),
+              Text('Favoritos'),
+              Text('Endereços'),
+              Text('Ajuda'),
+              Text('Configurações'),
+            ],
+          ),
         ),
       ),
     );
