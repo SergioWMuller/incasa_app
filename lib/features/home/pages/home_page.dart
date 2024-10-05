@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:projeto_incasa_app/screens/home/screens/profile/profile_view.dart';
-import 'package:projeto_incasa_app/screens/home/screens/sales/sales_view.dart';
-import 'package:projeto_incasa_app/screens/home/screens/marketplace/marketplace_view.dart';
+import 'package:projeto_incasa_app/features/marketplace/pages/marketplace_page.dart';
+import 'package:projeto_incasa_app/features/my_store/pages/my_store_page.dart';
+import 'package:projeto_incasa_app/features/profile/pages/profile_page.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
 
@@ -29,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('InCasa'),
       ),
       body: PageView(
+        physics: const NeverScrollableScrollPhysics(),
         controller: _pageController,
         onPageChanged: (index) {
           setState(() {
@@ -36,9 +36,9 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         children: const [
-          MarketplaceView(), // Página Vitrine
-          SalesView(), // Página Minha Loja
-          ProfileView(), // Página Perfil
+          MarketplacePage(),
+          MyStorePage(),
+          ProfilePage(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
