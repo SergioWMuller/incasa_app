@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../cubit/my_store_cubit.dart';
+import 'add_product_page.dart';
 
 class MyStorePage extends StatefulWidget {
   const MyStorePage({super.key});
@@ -78,7 +79,18 @@ class _MyStorePageState extends State<MyStorePage>
               ),
               floatingActionButton: FloatingActionButton(
                 child: const Icon(Icons.add),
-                onPressed: () {},
+                onPressed: () async {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const AddProductPage(),
+                    ),
+                  );
+                  // Se um produto foi adicionado, você pode recarregar a lista aqui
+                  if (result == true) {
+                    // TODO: Atualizar a lista de produtos
+                    setState(() {});
+                  }
+                },
               ),
             ),
           ],
