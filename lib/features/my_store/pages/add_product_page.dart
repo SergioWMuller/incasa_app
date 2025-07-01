@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../data/products_repository.dart';
+import '../../../data/repositories/products_repository.dart';
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -29,15 +29,16 @@ class _AddProductPageState extends State<AddProductPage> {
       _error = null;
     });
     try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) {
+      final user = FirebaseAuth.instance.currentUser;
+      final token = await user?.getIdToken();
+      if (user == null) {
         setState(() {
           _error = 'Usuário não autenticado.';
         });
         return;
       }
       await ProductsServicesRepository().create(
-        userId: userId,
+        userId: user.uid, // Correto: user.uid é o id do usuário autenticado
         type: _type,
         name: _nameController.text,
         description: _descriptionController.text,

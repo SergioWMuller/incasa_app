@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'profile_state.dart';
 
@@ -15,5 +17,11 @@ class ProfileCubit extends Cubit<ProfileState> {
         ),
       );
     }
+  }
+
+  Future<void> signOut() async {
+    await FirebaseAuth.instance.signOut();
+    await GoogleSignIn().signOut();
+    emit(LoadingProfileState());
   }
 }

@@ -18,26 +18,14 @@ class InCasaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'InCasa App',
+      title: 'inCasa App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepOrange,
+          seedColor: Colors.lightGreen,
         ),
         useMaterial3: true,
       ),
       home: const HomePage(),
     );
   }
-}
-
-Future<UserCredential?> signInWithGoogle() async {
-  final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-  if (googleUser == null) return null; // Usuário cancelou
-
-  final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-  final credential = GoogleAuthProvider.credential(
-    accessToken: googleAuth.accessToken,
-    idToken: googleAuth.idToken,
-  );
-  return await FirebaseAuth.instance.signInWithCredential(credential);
 }

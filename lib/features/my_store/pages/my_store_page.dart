@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../cubit/my_store_cubit.dart';
-import 'add_product_page.dart';
+import '../cubit/my_store_state.dart';
 
 class MyStorePage extends StatefulWidget {
   const MyStorePage({super.key});
@@ -18,14 +17,22 @@ class _MyStorePageState extends State<MyStorePage>
 
   @override
   void initState() {
+    super.initState();
     tabController = TabController(length: 2, vsync: this);
     myStoreCubit = MyStoreCubit();
-    super.initState();
+    myStoreCubit.loadMyStore();
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+    myStoreCubit.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
+    return BlocProvider<MyStoreCubit>.value(
       value: myStoreCubit,
       child: Scaffold(
         appBar: AppBar(
@@ -34,15 +41,11 @@ class _MyStorePageState extends State<MyStorePage>
             controller: tabController,
             tabs: const [
               Tab(
-                icon: Icon(
-                  Icons.store,
-                ),
+                icon: Icon(Icons.store),
                 text: 'Minha vitrine',
               ),
               Tab(
-                icon: Icon(
-                  Icons.storage_rounded,
-                ),
+                icon: Icon(Icons.storage_rounded),
                 text: 'Meus produtos',
               ),
             ],
@@ -55,43 +58,43 @@ class _MyStorePageState extends State<MyStorePage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Página Minha Loja'),
-                  Text('Meus produtos a venda'),
-                  Text('Oferecer meus Serviços'),
+                  Text('Aqui ficará seus'),
+                  Text('Produtos ou Serviços'),
+                  Text('disponíveis para venda.'),
                 ],
               ),
             ),
-            Scaffold(
-              body: ListView(
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  ...List.generate(
-                    20,
-                    (index) => ListTile(
-                      title: Text('Produto $index'),
-                      subtitle: Text('Quantidade em estoque: ${index + 1}'),
-                      trailing: const Icon(
-                        Icons.chevron_right_rounded,
+            BlocBuilder<MyStoreCubit, MyStoreState>(
+              builder: (context, state) {
+                if (state is LoadingMyStoreState) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is LoadedMyStoreState) {
+                  if (state.products.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Aqui terá todos os seus'),
+                          const Text('Produtos e Serviços cadastrados.'),
+                          const SizedBox(height: 16),
+                          const Text('Nenhum produto cadastrado.'),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              floatingActionButton: FloatingActionButton(
-                child: const Icon(Icons.add),
-                onPressed: () async {
-                  final result = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const AddProductPage(),
-                    ),
-                  );
-                  // Se um produto foi adicionado, você pode recarregar a lista aqui
-                  if (result == true) {
-                    // TODO: Atualizar a lista de produtos
-                    setState(() {});
+                    );
                   }
-                },
-              ),
+                  return ListView.builder(
+                    itemCount: state.products.length,
+                    itemBuilder: (context, index) {
+                      final product = state.products[index];
+                      return ListTile(
+                        title: Text(product['name'] ?? ''),
+                        subtitle: Text(product['description'] ?? ''),
+                      );
+                    },
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             ),
           ],
         ),
