@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../supabase_service.dart';
 
-class UsersRepository {
+class UserRepository {
   final SupabaseClient client = SupabaseService.client;
 
   Future<List<Map<String, dynamic>>> getUsers() async {

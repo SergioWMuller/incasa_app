@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:projeto_incasa_app/features/auth/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../cubit/profile_cubit.dart';
-import '../cubit/profile_state.dart';
+import '../cubits/profile_cubit.dart';
+import '../states/profile_state.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -33,9 +32,56 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: profileCubit,
-      child: BlocBuilder<ProfileCubit, ProfileState>(
+      child: BlocConsumer<ProfileCubit, ProfileState>(
+        listener: (context, state) async {
+          if (state is ProfileLoggedOut) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Logout realizado com sucesso!')),
+            );
+          } else if (state is ProfileLoggedIn) {
+            // Capture the context before the async gap
+            final messenger = ScaffoldMessenger.of(context);
+            // 3 - Dialog de sucesso da auth
+            await showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Sucesso'),
+                content: const Text('Login Google realizado com sucesso!'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+            if (!mounted) return;
+            // 4 - Snackbar de sucesso da auth
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Login Google realizado!')),
+            );
+            // 5 - Snackbar de sucesso ao salvar no Supabase
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(state.supabaseSaved
+                    ? 'Dados do usuário salvos no Supabase!'
+                    : 'Falha ao salvar dados no Supabase.'),
+              ),
+            );
+          } else if (state is ProfileLoginFailed) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(state.message ?? 'Login cancelado ou falhou.')),
+            );
+          }
+        },
         builder: (context, state) {
-          final user = FirebaseAuth.instance.currentUser;
+          User? user;
+          if (state is ProfileLoaded || state is ProfileLoggedIn) {
+            user = (state as dynamic).user;
+          } else {
+            user = FirebaseAuth.instance.currentUser;
+          }
           final photoUrl = user?.photoURL;
           final isLoggedIn = user != null;
 
@@ -61,40 +107,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   trailing: Icon(isLoggedIn ? Icons.logout : Icons.login),
                   onTap: () async {
                     if (isLoggedIn) {
-                      await context.read<ProfileCubit>().signOut();
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Logout realizado com sucesso!')),
-                      );
-                      setState(() {}); // Atualiza avatar após logout
+                      context.read<ProfileCubit>().signOut();
                     } else {
-                      final userCredential = await signInWithGoogle();
-                      if (!mounted) return;
-                      await showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(
-                              userCredential != null ? 'Sucesso' : 'Falha'),
-                          content: Text(userCredential != null
-                              ? 'Login Google realizado com sucesso!'
-                              : 'Login cancelado ou falhou.'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(userCredential != null
-                              ? 'Login Google realizado!'
-                              : 'Login cancelado ou falhou.'),
-                        ),
-                      );
-                      setState(() {}); // Atualiza avatar após login
+                      context.read<ProfileCubit>().signInWithGoogle();
                     }
                   },
                 ),

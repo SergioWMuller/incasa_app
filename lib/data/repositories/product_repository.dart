@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../supabase_service.dart';
 
-class ProductsServicesRepository {
+class ProductRepository {
   final SupabaseClient client = SupabaseService.client;
 
   Future<List<Map<String, dynamic>>> getAll() async {

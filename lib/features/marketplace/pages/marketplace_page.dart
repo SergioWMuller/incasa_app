@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../cubit/marketplace_cubit.dart';
+import '../cubits/marketplace_cubit.dart';
 
 class MarketplacePage extends StatefulWidget {
   const MarketplacePage({super.key});

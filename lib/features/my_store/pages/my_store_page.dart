@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:projeto_incasa_app/features/my_store/cubits/my_store_cubit.dart';
+import 'package:projeto_incasa_app/features/my_store/states/my_store_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../cubit/my_store_cubit.dart';
-import '../cubit/my_store_state.dart';
+import 'package:flutter/material.dart';
+import 'add_product_page.dart';
 
 class MyStorePage extends StatefulWidget {
   const MyStorePage({super.key});
@@ -17,10 +18,10 @@ class _MyStorePageState extends State<MyStorePage>
 
   @override
   void initState() {
-    super.initState();
     tabController = TabController(length: 2, vsync: this);
     myStoreCubit = MyStoreCubit();
     myStoreCubit.loadMyStore();
+    super.initState();
   }
 
   @override
@@ -32,7 +33,7 @@ class _MyStorePageState extends State<MyStorePage>
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<MyStoreCubit>.value(
+    return BlocProvider.value(
       value: myStoreCubit,
       child: Scaffold(
         appBar: AppBar(
@@ -59,7 +60,7 @@ class _MyStorePageState extends State<MyStorePage>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text('Aqui ficará seus'),
-                  Text('Produtos ou Serviços'),
+                  Text('Produtos e Serviços'),
                   Text('disponíveis para venda.'),
                 ],
               ),
@@ -70,14 +71,14 @@ class _MyStorePageState extends State<MyStorePage>
                   return const Center(child: CircularProgressIndicator());
                 } else if (state is LoadedMyStoreState) {
                   if (state.products.isEmpty) {
-                    return Center(
+                    return const Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('Aqui terá todos os seus'),
-                          const Text('Produtos e Serviços cadastrados.'),
-                          const SizedBox(height: 16),
-                          const Text('Nenhum produto cadastrado.'),
+                          Text('Aqui terá todos os seus'),
+                          Text('Produtos e Serviços cadastrados.'),
+                          SizedBox(height: 16),
+                          Text('Nenhum produto cadastrado.'),
                         ],
                       ),
                     );
@@ -88,16 +89,43 @@ class _MyStorePageState extends State<MyStorePage>
                       final product = state.products[index];
                       return ListTile(
                         title: Text(product['name'] ?? ''),
-                        subtitle: Text(product['description'] ?? ''),
+                        subtitle: Text('Estoque: ${product['stock'] ?? '-'}'),
                       );
                     },
                   );
+                } else if (state is ErrorMyStoreState) {
+                  return Center(child: Text('Erro: ${state.errorMessage}'));
                 }
                 return const SizedBox.shrink();
               },
             ),
           ],
         ),
+        // ...existing code...
+        floatingActionButton: AnimatedBuilder(
+          animation: tabController,
+          builder: (context, child) {
+            return tabController.index == 1
+                ? FloatingActionButton(
+                    child: const Icon(Icons.add),
+                    onPressed: () async {
+                      final navigator = Navigator.of(context);
+                      final cubit = context.read<MyStoreCubit>();
+                      final wasMounted = mounted;
+                      final result = await navigator.push(
+                        MaterialPageRoute(
+                          builder: (_) => const AddProductPage(),
+                        ),
+                      );
+                      if (wasMounted && mounted && result == true) {
+                        cubit.loadMyStore();
+                      }
+                    },
+                  )
+                : const SizedBox.shrink();
+          },
+        ),
+// ...existing code...
       ),
     );
   }

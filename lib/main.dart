@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:projeto_incasa_app/features/home/pages/home_page.dart';
 import 'package:projeto_incasa_app/data/supabase_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +19,7 @@ class InCasaApp extends StatelessWidget {
       title: 'inCasa App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.lightGreen,
+          seedColor: Colors.deepOrange,
         ),
         useMaterial3: true,
       ),

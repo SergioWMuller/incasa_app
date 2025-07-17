@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'marketplace_state.dart';
+import '../states/marketplace_state.dart';
 
 class MarketplaceCubit extends Cubit<MarketplaceState> {
   MarketplaceCubit() : super(LoadingMarketplaceState());
