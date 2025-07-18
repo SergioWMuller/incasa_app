@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "289817032686",
+    "project_id": "incasa-f0d5a",
+    "storage_bucket": "incasa-f0d5a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:289817032686:android:f422f31bd0d31eead1c0ff",
+        "android_client_info": {
+          "package_name": "br.app.incasa.projeto_incasa_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "289817032686-07cc95duthu8ncqr01v1qep7k7vnh3qf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.app.incasa.projeto_incasa_app",
+            "certificate_hash": "7ae189149b0da3a80703a009fc16e122ae63c8aa"
+          }
+        },
+        {
+          "client_id": "289817032686-cakro7a1lgfqo6depe2500h5bdnejo71.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1tWtrc4g5qYeb-YPA2Ns63wS4VXj9u_0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "289817032686-cakro7a1lgfqo6depe2500h5bdnejo71.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "289817032686-7bnej8627d58qs5kafa6so05meoi2oht.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "br.app.incasa.projetoIncasaApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:projeto_incasa_app/features/my_store/cubits/my_store_cubit.dart';
+import 'package:projeto_incasa_app/features/my_store/states/my_store_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../cubit/my_store_cubit.dart';
+import 'package:flutter/material.dart';
+import 'add_product_page.dart';
 
 class MyStorePage extends StatefulWidget {
   const MyStorePage({super.key});
@@ -19,7 +20,15 @@ class _MyStorePageState extends State<MyStorePage>
   void initState() {
     tabController = TabController(length: 2, vsync: this);
     myStoreCubit = MyStoreCubit();
+    myStoreCubit.loadMyStore();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    tabController.dispose();
+    myStoreCubit.close();
+    super.dispose();
   }
 
   @override
@@ -33,15 +42,11 @@ class _MyStorePageState extends State<MyStorePage>
             controller: tabController,
             tabs: const [
               Tab(
-                icon: Icon(
-                  Icons.store,
-                ),
+                icon: Icon(Icons.store),
                 text: 'Minha vitrine',
               ),
               Tab(
-                icon: Icon(
-                  Icons.storage_rounded,
-                ),
+                icon: Icon(Icons.storage_rounded),
                 text: 'Meus produtos',
               ),
             ],
@@ -54,35 +59,73 @@ class _MyStorePageState extends State<MyStorePage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Página Minha Loja'),
-                  Text('Meus produtos a venda'),
-                  Text('Oferecer meus Serviços'),
+                  Text('Aqui ficará seus'),
+                  Text('Produtos e Serviços'),
+                  Text('disponíveis para venda.'),
                 ],
               ),
             ),
-            Scaffold(
-              body: ListView(
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  ...List.generate(
-                    20,
-                    (index) => ListTile(
-                      title: Text('Produto $index'),
-                      subtitle: Text('Quantidade em estoque: ${index + 1}'),
-                      trailing: const Icon(
-                        Icons.chevron_right_rounded,
+            BlocBuilder<MyStoreCubit, MyStoreState>(
+              builder: (context, state) {
+                if (state is LoadingMyStoreState) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (state is LoadedMyStoreState) {
+                  if (state.products.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Aqui terá todos os seus'),
+                          Text('Produtos e Serviços cadastrados.'),
+                          SizedBox(height: 16),
+                          Text('Nenhum produto cadastrado.'),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              floatingActionButton: FloatingActionButton(
-                child: const Icon(Icons.add),
-                onPressed: () {},
-              ),
+                    );
+                  }
+                  return ListView.builder(
+                    itemCount: state.products.length,
+                    itemBuilder: (context, index) {
+                      final product = state.products[index];
+                      return ListTile(
+                        title: Text(product['name'] ?? ''),
+                        subtitle: Text('Estoque: ${product['stock'] ?? '-'}'),
+                      );
+                    },
+                  );
+                } else if (state is ErrorMyStoreState) {
+                  return Center(child: Text('Erro: ${state.errorMessage}'));
+                }
+                return const SizedBox.shrink();
+              },
             ),
           ],
         ),
+        // ...existing code...
+        floatingActionButton: AnimatedBuilder(
+          animation: tabController,
+          builder: (context, child) {
+            return tabController.index == 1
+                ? FloatingActionButton(
+                    child: const Icon(Icons.add),
+                    onPressed: () async {
+                      final navigator = Navigator.of(context);
+                      final cubit = context.read<MyStoreCubit>();
+                      final wasMounted = mounted;
+                      final result = await navigator.push(
+                        MaterialPageRoute(
+                          builder: (_) => const AddProductPage(),
+                        ),
+                      );
+                      if (wasMounted && mounted && result == true) {
+                        cubit.loadMyStore();
+                      }
+                    },
+                  )
+                : const SizedBox.shrink();
+          },
+        ),
+// ...existing code...
       ),
     );
   }

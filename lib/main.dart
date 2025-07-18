@@ -1,7 +1,14 @@
-import 'package:flutter/material.dart';
 import 'package:projeto_incasa_app/features/home/pages/home_page.dart';
+import 'package:projeto_incasa_app/data/supabase_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 
-void main() => runApp(const InCasaApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await SupabaseService.init();
+  runApp(const InCasaApp());
+}
 
 class InCasaApp extends StatelessWidget {
   const InCasaApp({super.key});
@@ -9,7 +16,7 @@ class InCasaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'InCasa App',
+      title: 'inCasa App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.deepOrange,
