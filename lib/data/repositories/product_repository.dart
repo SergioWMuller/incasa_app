@@ -1,12 +1,15 @@
+import 'package:projeto_incasa_app/data/models/product_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../supabase_service.dart';
 
 class ProductRepository {
   final SupabaseClient client = SupabaseService.client;
 
-  Future<List<Map<String, dynamic>>> getAll() async {
+  Future<List<ProductModel>> getAll() async {
     final response = await client.from('products_services').select();
-    return List<Map<String, dynamic>>.from(response);
+    return List<Map<String, dynamic>>.from(response)
+        .map((map) => ProductModel.fromMap(map))
+        .toList();
   }
 
   Future<Map<String, dynamic>?> getById(String id) async {
@@ -23,6 +26,9 @@ class ProductRepository {
     required num price,
     int? stock,
     int? leadTimeDays,
+    num? discount,
+    String? promoCode,
+    String? category,
     required bool isAvailable,
   }) async {
     await client.from('products_services').insert({
@@ -33,6 +39,9 @@ class ProductRepository {
       'price': price,
       'stock': stock,
       'lead_time_days': leadTimeDays,
+      'discount': discount,
+      'promo_code': promoCode,
+      'category': category,
       'is_available': isAvailable,
     });
   }
@@ -58,5 +67,11 @@ class ProductRepository {
 
   Future<void> delete(String id) async {
     await client.from('products_services').delete().eq('id', id);
+  }
+
+  Future<void> updateAvailability(int productId, bool isAvailable) async {
+    await client
+        .from('products_services')
+        .update({'is_available': isAvailable}).eq('id', productId);
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:projeto_incasa_app/features/auth/services/auth_service.dart';
 import 'package:projeto_incasa_app/data/models/auth_result_google.dart';
-import '../states/profile_state.dart';
+import 'package:projeto_incasa_app/features/profile/cubits/profile_state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
   final AuthService authService;

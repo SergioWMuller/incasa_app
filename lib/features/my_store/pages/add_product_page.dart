@@ -17,6 +17,9 @@ class _AddProductPageState extends State<AddProductPage> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
   final _leadTimeController = TextEditingController();
+  final _discountController = TextEditingController();
+  final _promoCodeController = TextEditingController();
+  final _categoryController = TextEditingController();
   bool _isAvailable = true;
   String _type = 'product';
 
@@ -77,19 +80,43 @@ class _AddProductPageState extends State<AddProductPage> {
                       validator: (v) =>
                           v == null || v.isEmpty ? 'Informe o preço' : null,
                     ),
-                    TextFormField(
-                      textInputAction: TextInputAction.next,
-                      controller: _stockController,
-                      decoration: const InputDecoration(
-                          labelText: 'Estoque (opcional)'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextFormField(
-                      textInputAction: TextInputAction.next,
-                      controller: _leadTimeController,
-                      decoration: const InputDecoration(
-                          labelText: 'Prazo de entrega (dias, opcional)'),
-                      keyboardType: TextInputType.number,
+                    ExpansionTile(
+                      title: const Text('Campos opcionais'),
+                      children: [
+                        TextFormField(
+                          textInputAction: TextInputAction.next,
+                          controller: _stockController,
+                          decoration: const InputDecoration(
+                              labelText: 'Estoque (opcional)'),
+                          keyboardType: TextInputType.number,
+                        ),
+                        TextFormField(
+                          textInputAction: TextInputAction.next,
+                          controller: _leadTimeController,
+                          decoration: const InputDecoration(
+                              labelText: 'Prazo de entrega (dias, opcional)'),
+                          keyboardType: TextInputType.number,
+                        ),
+                        TextFormField(
+                          textInputAction: TextInputAction.next,
+                          controller: _discountController,
+                          decoration: const InputDecoration(
+                              labelText: 'Desconto (opcional)'),
+                          keyboardType: TextInputType.number,
+                        ),
+                        TextFormField(
+                          textInputAction: TextInputAction.next,
+                          controller: _promoCodeController,
+                          decoration: const InputDecoration(
+                              labelText: 'Código Promocional (opcional)'),
+                        ),
+                        TextFormField(
+                          textInputAction: TextInputAction.next,
+                          controller: _categoryController,
+                          decoration: const InputDecoration(
+                              labelText: 'Categoria (opcional)'),
+                        ),
+                      ],
                     ),
                     SwitchListTile(
                       value: _isAvailable,
@@ -113,6 +140,9 @@ class _AddProductPageState extends State<AddProductPage> {
                                       price: _priceController.text,
                                       stock: _stockController.text,
                                       leadTimeDays: _leadTimeController.text,
+                                      discount: _discountController.text,
+                                      promoCode: _promoCodeController.text,
+                                      category: _categoryController.text,
                                       isAvailable: _isAvailable,
                                     );
                               }

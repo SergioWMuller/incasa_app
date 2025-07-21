@@ -1,26 +1,26 @@
 class ProductModel {
-  final int? id;
+  final int id;
   final String userId;
-  final String? type;
-  final String? name;
-  final String? description;
-  final num? price;
+  final String type;
+  final String name;
+  final String description;
+  final num price;
   final num? discount;
   final String? promoCode;
   final int? stock;
   final int? leadTimeDays;
-  final bool? isAvailable;
+  bool? isAvailable;
   final DateTime? createdAt;
   final String? productUid;
   final String? category;
 
   ProductModel({
-    this.id,
+    required this.id,
     required this.userId,
-    this.type,
-    this.name,
-    this.description,
-    this.price,
+    required this.type,
+    required this.name,
+    required this.description,
+    required this.price,
     this.discount,
     this.promoCode,
     this.stock,

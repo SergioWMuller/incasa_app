@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:projeto_incasa_app/features/profile/cubits/profile_cubit.dart';
+import 'package:projeto_incasa_app/features/profile/cubits/profile_state.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import '../cubits/profile_cubit.dart';
-import '../states/profile_state.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/material.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

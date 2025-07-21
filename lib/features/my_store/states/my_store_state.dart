@@ -1,13 +1,15 @@
-final class MyStoreState {}
+import 'package:projeto_incasa_app/data/models/product_model.dart';
 
-final class LoadingMyStoreState extends MyStoreState {}
+abstract class MyStoreState {}
 
-final class LoadedMyStoreState extends MyStoreState {
-  final List<Map<String, dynamic>> products;
+class LoadingMyStoreState extends MyStoreState {}
+
+class LoadedMyStoreState extends MyStoreState {
+  final List<ProductModel> products;
   LoadedMyStoreState(this.products);
 }
 
-final class ErrorMyStoreState extends MyStoreState {
+class ErrorMyStoreState extends MyStoreState {
   final String errorMessage;
   ErrorMyStoreState({required this.errorMessage});
 }

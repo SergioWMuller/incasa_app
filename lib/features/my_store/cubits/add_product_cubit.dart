@@ -13,6 +13,9 @@ class AddProductCubit extends Cubit<AddProductState> {
     required String price,
     required String? stock,
     required String? leadTimeDays,
+    required String? discount,
+    required String? promoCode,
+    required String? category,
     required bool isAvailable,
   }) async {
     emit(AddProductLoading());
@@ -23,7 +26,7 @@ class AddProductCubit extends Cubit<AddProductState> {
         return;
       }
       await ProductRepository().create(
-        userId: user.uid, // <-- Passa o userId como String
+        userId: user.uid,
         type: type,
         name: name,
         description: description,
@@ -32,6 +35,11 @@ class AddProductCubit extends Cubit<AddProductState> {
         leadTimeDays: leadTimeDays != null && leadTimeDays.isNotEmpty
             ? int.tryParse(leadTimeDays)
             : null,
+        discount: discount != null && discount.isNotEmpty
+            ? num.tryParse(discount)
+            : null,
+        promoCode: promoCode,
+        category: category,
         isAvailable: isAvailable,
       );
       emit(AddProductSuccess());
