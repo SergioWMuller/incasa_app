@@ -1,2 +1,0 @@
-/Users/swm/Documents/WorkSpace/Flutter/incasa_app/android/app/.cxx/Debug/4s45w6ri/x86/CMakeFiles/edit_cache.dir
-/Users/swm/Documents/WorkSpace/Flutter/incasa_app/android/app/.cxx/Debug/4s45w6ri/x86/CMakeFiles/rebuild_cache.dir

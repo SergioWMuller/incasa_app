@@ -1,12 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:projeto_incasa_app/data/models/auth_result_google.dart';
-import 'package:projeto_incasa_app/data/supabase_service.dart';
+import 'package:incasa_app/data/models/auth_result.dart';
 
 class AuthService {
-  Future<AuthResult> signInWithGoogleAndSaveToSupabase() async {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  User? get currentUser => _firebaseAuth.currentUser;
+
+  Future<AuthResult> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         return AuthResult(
           userCredential: null,
@@ -21,8 +25,10 @@ class AuthService {
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      final userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final userCredential = await _firebaseAuth.signInWithCredential(
+        credential,
+      );
 
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
@@ -33,39 +39,10 @@ class AuthService {
         );
       }
 
-      // Verifica se o usuário já existe no Supabase
-      final existingUser = await SupabaseService.client
-          .from('users')
-          .select('id')
-          .eq('uid_google', firebaseUser.uid)
-          .maybeSingle();
-
-      bool supabaseSaved = false;
-      if (existingUser == null) {
-        try {
-          await SupabaseService.client.from('users').insert({
-            'uid_google': firebaseUser.uid,
-            'display_name': firebaseUser.displayName ?? '',
-            'email': firebaseUser.email ?? '',
-            'photo_url': firebaseUser.photoURL ?? '',
-            'email_verified': firebaseUser.emailVerified,
-            'phone_number': firebaseUser.phoneNumber,
-            'isAnonymous': firebaseUser.isAnonymous,
-          });
-          supabaseSaved = true;
-        } catch (e) {
-          supabaseSaved = false;
-        }
-      } else {
-        supabaseSaved = true;
-      }
-
       return AuthResult(
         userCredential: userCredential,
-        supabaseSaved: supabaseSaved,
-        message: supabaseSaved
-            ? 'Login e salvamento no Supabase concluídos.'
-            : 'Login feito, mas falha ao salvar no Supabase.',
+        supabaseSaved: true,
+        message: 'Login realizado com sucesso!',
       );
     } catch (e) {
       return AuthResult(
@@ -77,7 +54,7 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    await FirebaseAuth.instance.signOut();
-    await GoogleSignIn().signOut();
+    await _firebaseAuth.signOut();
+    await _googleSignIn.signOut();
   }
 }
