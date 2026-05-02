@@ -18,17 +18,16 @@ void main() async {
 // sergio muller
 class InCasaApp extends StatelessWidget {
   const InCasaApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => sl<ThemeCubit>()..loadThemeMode(),
+      create: (context) => sl<ThemeCubit>()..loadThemeSettings(),
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp(
             title: 'InCasa App',
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            theme: AppTheme.lightTheme(themeState.color),
+            darkTheme: AppTheme.darkTheme(themeState.color),
             themeMode: _getThemeMode(themeState.mode),
             home: const AppShell(),
           );

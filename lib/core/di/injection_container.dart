@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import 'package:incasa_app/core/network/dio_client.dart';
 import 'package:incasa_app/core/theme/theme_cubit.dart';
+import 'package:incasa_app/data/datasources/local/auth_local_data_source.dart';
 import 'package:incasa_app/features/auth/services/auth_service.dart';
 import 'package:incasa_app/features/auth/cubit/auth_cubit.dart';
 import 'package:incasa_app/data/datasources/local/marketplace_local_data_source.dart';
@@ -24,8 +25,10 @@ import 'package:incasa_app/domain/usecases/marketplace/search_products.dart';
 import 'package:incasa_app/domain/usecases/my_store/get_my_products.dart';
 import 'package:incasa_app/domain/usecases/my_store/get_my_store.dart';
 import 'package:incasa_app/domain/usecases/profile/get_theme_mode.dart';
+import 'package:incasa_app/domain/usecases/profile/get_theme_color.dart';
 import 'package:incasa_app/domain/usecases/profile/get_user_profile.dart';
 import 'package:incasa_app/domain/usecases/profile/save_theme_mode.dart';
+import 'package:incasa_app/domain/usecases/profile/save_theme_color.dart';
 import 'package:incasa_app/features/marketplace/cubit/marketplace_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_cubit.dart';
 import 'package:incasa_app/features/profile/cubit/profile_cubit.dart';
@@ -55,7 +58,7 @@ Future<void> initializeDependencies() async {
 
   // ============== Data Sources - Profile ==============
   sl.registerLazySingleton<ProfileLocalDataSource>(
-    () => ProfileLocalDataSourceImpl(),
+    () => ProfileLocalDataSourceImpl(authLocalDataSource: sl()),
   );
   sl.registerLazySingleton<ProfileRemoteDataSource>(
     () => ProfileRemoteDataSourceImpl(sl()),
@@ -64,6 +67,11 @@ Future<void> initializeDependencies() async {
   // ============== Data Sources - Theme ==============
   sl.registerLazySingleton<ThemeLocalDataSource>(
     () => ThemeLocalDataSourceImpl(),
+  );
+
+  // ============== Data Sources - Auth ==============
+  sl.registerLazySingleton<AuthLocalDataSource>(
+    () => AuthLocalDataSourceImpl(),
   );
 
   // ============== Repositories - Marketplace ==============
@@ -103,6 +111,8 @@ Future<void> initializeDependencies() async {
   // ============== Use Cases - Theme ==============
   sl.registerFactory(() => GetThemeMode(sl()));
   sl.registerFactory(() => SaveThemeMode(sl()));
+  sl.registerFactory(() => GetThemeColor(sl()));
+  sl.registerFactory(() => SaveThemeColor(sl()));
 
   // ============== Cubits - Marketplace ==============
   sl.registerFactory(
@@ -122,10 +132,17 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => ProfileCubit(getUserProfileUseCase: sl()));
 
   // ============== Cubits - Auth ==============
-  sl.registerFactory(() => AuthCubit(authService: sl()));
+  sl.registerFactory(
+    () => AuthCubit(authService: sl(), authLocalDataSource: sl()),
+  );
 
   // ============== Cubits - Theme ==============
   sl.registerFactory(
-    () => ThemeCubit(getThemeModeUseCase: sl(), saveThemeModeUseCase: sl()),
+    () => ThemeCubit(
+      getThemeModeUseCase: sl(),
+      saveThemeModeUseCase: sl(),
+      getThemeColorUseCase: sl(),
+      saveThemeColorUseCase: sl(),
+    ),
   );
 }

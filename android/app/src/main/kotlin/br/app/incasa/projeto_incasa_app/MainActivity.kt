@@ -1,4 +1,4 @@
-package com.example.incasa_app
+package br.app.incasa.projeto_incasa_app
 
 import io.flutter.embedding.android.FlutterActivity
 

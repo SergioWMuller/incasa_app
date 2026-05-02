@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/features/auth/cubit/auth_cubit.dart';
+import 'package:incasa_app/features/auth/cubit/auth_state.dart';
 import 'package:incasa_app/features/marketplace/cubit/marketplace_cubit.dart';
 import 'package:incasa_app/features/marketplace/view/marketplace_view.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_cubit.dart';
@@ -63,29 +64,49 @@ class _AppShellState extends State<AppShell> {
         BlocProvider.value(value: _myStoreCubit),
         BlocProvider.value(value: _profileCubit),
       ],
-      child: Scaffold(
-        appBar: AppBar(title: const Text('InCasa'), centerTitle: true),
-        body: PageView(
-          physics: const NeverScrollableScrollPhysics(),
-          controller: _pageController,
-          onPageChanged: (index) {
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          children: const [MarketplaceView(), MyStoreView(), ProfileView()],
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.store), label: 'Vitrine'),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.business),
-              label: 'Minha Loja',
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-          ],
+      child: BlocListener<AuthCubit, AuthState>(
+        listener: (context, authState) {
+          // Quando o usuário faz logout, limpa o estado do perfil
+          if (authState is AuthUnauthenticated) {
+            print('🔄 Usuário deslogado - limpando estado do perfil');
+            _profileCubit.clearProfile();
+          }
+          // Quando o usuário faz login, recarrega o perfil
+          else if (authState is AuthAuthenticated) {
+            print('🔄 Usuário logado - carregando perfil');
+            _profileCubit.loadProfile();
+          }
+        },
+        child: Scaffold(
+          appBar: AppBar(title: const Text('InCasa'), centerTitle: true),
+          body: PageView(
+            physics: const NeverScrollableScrollPhysics(),
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _selectedIndex = index;
+              });
+            },
+            children: const [MarketplaceView(), MyStoreView(), ProfileView()],
+          ),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.store),
+                label: 'Vitrine',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.business),
+                label: 'Minha Loja',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Perfil',
+              ),
+            ],
+          ),
         ),
       ),
     );

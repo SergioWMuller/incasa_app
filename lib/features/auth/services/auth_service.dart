@@ -10,8 +10,11 @@ class AuthService {
 
   Future<AuthResult> signInWithGoogle() async {
     try {
+      print('🔵 AuthService: Iniciando Google Sign In...');
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
       if (googleUser == null) {
+        print('⚠️ AuthService: Login cancelado pelo usuário');
         return AuthResult(
           userCredential: null,
           supabaseSaved: false,
@@ -19,19 +22,24 @@ class AuthService {
         );
       }
 
+      print('🔵 AuthService: Usuário Google selecionado: ${googleUser.email}');
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+
+      print('🔵 AuthService: Obtendo credential do Firebase...');
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
+      print('🔵 AuthService: Fazendo login no Firebase...');
       final userCredential = await _firebaseAuth.signInWithCredential(
         credential,
       );
 
       final firebaseUser = userCredential.user;
       if (firebaseUser == null) {
+        print('❌ AuthService: Erro - usuário Firebase é null');
         return AuthResult(
           userCredential: null,
           supabaseSaved: false,
@@ -39,12 +47,16 @@ class AuthService {
         );
       }
 
+      print(
+        '✅ AuthService: Login Firebase bem-sucedido: ${firebaseUser.email}',
+      );
       return AuthResult(
         userCredential: userCredential,
         supabaseSaved: true,
         message: 'Login realizado com sucesso!',
       );
     } catch (e) {
+      print('💥 AuthService: Erro durante login: $e');
       return AuthResult(
         userCredential: null,
         supabaseSaved: false,

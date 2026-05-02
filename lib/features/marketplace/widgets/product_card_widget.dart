@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:incasa_app/core/theme/theme_cubit.dart';
 import 'package:incasa_app/domain/entities/marketplace/product.dart';
 
 /// Widget para exibir um produto em forma de Card
@@ -36,13 +38,17 @@ class ProductCardWidget extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: Text(
-          'R\$ ${product.price.toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.green,
-            fontSize: 16,
-          ),
+        trailing: BlocBuilder<ThemeCubit, ThemeState>(
+          builder: (context, themeState) {
+            return Text(
+              'R\$ ${product.price.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: themeState.color.color,
+                fontSize: 16,
+              ),
+            );
+          },
         ),
       ),
     );

@@ -36,7 +36,7 @@ class ProfileView extends StatelessWidget {
           }
 
           // Se autenticado, mostrar o perfil com dados
-          final firebaseUser = (authState as AuthAuthenticated).user;
+          final firebaseUser = authState.user;
           return BlocBuilder<ProfileCubit, ProfileState>(
             builder: (context, profileState) {
               return switch (profileState) {

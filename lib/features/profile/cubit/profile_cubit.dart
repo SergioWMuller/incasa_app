@@ -22,4 +22,9 @@ class ProfileCubit extends Cubit<ProfileState> {
         emit(ProfileError(failure.message));
     }
   }
+
+  /// Limpa o estado do perfil (usado ao fazer logout)
+  void clearProfile() {
+    emit(const ProfileLoading());
+  }
 }

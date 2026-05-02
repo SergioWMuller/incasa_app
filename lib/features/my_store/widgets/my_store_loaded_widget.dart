@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:incasa_app/core/theme/theme_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_state.dart';
 import 'package:incasa_app/features/my_store/widgets/my_store_product_card.dart';
 
@@ -60,14 +62,20 @@ class MyStoreLoadedWidget extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 24),
-                    Chip(
-                      label: Text(
-                        state.store.isActive ? 'Loja Ativa' : 'Loja Inativa',
-                      ),
-                      backgroundColor: state.store.isActive
-                          ? Colors.green
-                          : Colors.grey,
-                      labelStyle: const TextStyle(color: Colors.white),
+                    BlocBuilder<ThemeCubit, ThemeState>(
+                      builder: (context, themeState) {
+                        return Chip(
+                          label: Text(
+                            state.store.isActive
+                                ? 'Loja Ativa'
+                                : 'Loja Inativa',
+                          ),
+                          backgroundColor: state.store.isActive
+                              ? themeState.color.color
+                              : Colors.grey,
+                          labelStyle: const TextStyle(color: Colors.white),
+                        );
+                      },
                     ),
                     const SizedBox(height: 24),
                     Text(
