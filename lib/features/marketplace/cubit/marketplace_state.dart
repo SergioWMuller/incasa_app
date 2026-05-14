@@ -2,37 +2,35 @@ import 'package:equatable/equatable.dart';
 import 'package:incasa_app/domain/entities/marketplace/product.dart';
 import 'package:incasa_app/domain/entities/marketplace/category.dart';
 
-/// Sealed class para o estado do Marketplace
-/// Garante exhaustiveness checking no pattern matching
-sealed class MarketplaceState extends Equatable {
-  const MarketplaceState();
+enum MarketplaceStatus { loading, loaded, error }
+
+class MarketplaceState extends Equatable {
+  final MarketplaceStatus status;
+  final List<Product>? products;
+  final List<Category>? categories;
+  final String? errorMessage;
+
+  const MarketplaceState({
+    this.status = MarketplaceStatus.loading,
+    this.products,
+    this.categories,
+    this.errorMessage,
+  });
 
   @override
-  List<Object?> get props => [];
-}
+  List<Object?> get props => [status, products, categories, errorMessage];
 
-/// Estado inicial/carregando
-class MarketplaceLoading extends MarketplaceState {
-  const MarketplaceLoading();
-}
-
-/// Estado com dados carregados
-class MarketplaceLoaded extends MarketplaceState {
-  final List<Product> products;
-  final List<Category> categories;
-
-  const MarketplaceLoaded({required this.products, required this.categories});
-
-  @override
-  List<Object?> get props => [products, categories];
-}
-
-/// Estado de erro
-class MarketplaceError extends MarketplaceState {
-  final String message;
-
-  const MarketplaceError(this.message);
-
-  @override
-  List<Object?> get props => [message];
+  MarketplaceState copyWith({
+    MarketplaceStatus? status,
+    List<Product>? products,
+    List<Category>? categories,
+    String? errorMessage,
+  }) {
+    return MarketplaceState(
+      status: status ?? this.status,
+      products: products ?? this.products,
+      categories: categories ?? this.categories,
+      errorMessage: errorMessage ?? this.errorMessage,
+    );
+  }
 }

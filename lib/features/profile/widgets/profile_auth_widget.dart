@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/features/auth/cubit/auth_cubit.dart';
 import 'package:incasa_app/features/auth/cubit/auth_state.dart';
 import 'package:incasa_app/features/profile/widgets/profile_menu_widget.dart';
@@ -11,7 +11,7 @@ class ProfileAuthWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = authState is AuthLoading;
+    final isLoading = authState.status == AuthStatus.loading;
 
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -52,7 +52,7 @@ class ProfileAuthWidget extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: isLoading
                       ? null
-                      : () => context.read<AuthCubit>().signInWithGoogle(),
+                      : () => sl<AuthCubit>().signInWithGoogle(),
                   icon: isLoading
                       ? SizedBox(
                           width: 20,
@@ -72,7 +72,7 @@ class ProfileAuthWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              if (authState is AuthError) ...[
+              if (authState.status == AuthStatus.error) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -85,7 +85,7 @@ class ProfileAuthWidget extends StatelessWidget {
                       const Icon(Icons.error_outline, color: Colors.red),
                       const SizedBox(height: 8),
                       Text(
-                        (authState as AuthError).message,
+                        authState.errorMessage ?? 'Erro desconhecido',
                         style: const TextStyle(color: Colors.red),
                         textAlign: TextAlign.center,
                       ),

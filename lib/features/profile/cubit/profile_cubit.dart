@@ -8,23 +8,28 @@ class ProfileCubit extends Cubit<ProfileState> {
   final GetUserProfile getUserProfileUseCase;
 
   ProfileCubit({required this.getUserProfileUseCase})
-    : super(const ProfileLoading());
+    : super(const ProfileState());
 
   Future<void> loadProfile() async {
-    emit(const ProfileLoading());
+    emit(const ProfileState(status: ProfileStatus.loading));
 
     final result = await getUserProfileUseCase(const NoParams());
 
     switch (result) {
       case Success(:final data):
-        emit(ProfileLoaded(data));
+        emit(ProfileState(status: ProfileStatus.loaded, user: data));
       case Error(:final failure):
-        emit(ProfileError(failure.message));
+        emit(
+          ProfileState(
+            status: ProfileStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
     }
   }
 
   /// Limpa o estado do perfil (usado ao fazer logout)
   void clearProfile() {
-    emit(const ProfileLoading());
+    emit(const ProfileState(status: ProfileStatus.loading));
   }
 }

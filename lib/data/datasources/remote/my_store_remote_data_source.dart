@@ -1,54 +1,49 @@
-import 'package:incasa_app/core/network/dio_client.dart';
+import 'package:incasa_app/core/network/supabase_client.dart';
+import 'package:incasa_app/data/datasources/remote/product_supabase_data_source.dart';
 import 'package:incasa_app/data/models/marketplace/product_model.dart';
 import 'package:incasa_app/data/models/my_store/store_model.dart';
 
 /// Data Source Remote para MyStore
 abstract class MyStoreRemoteDataSource {
   Future<StoreModel> getMyStore();
-  Future<List<ProductModel>> getMyProducts();
-  Future<ProductModel> addProduct(ProductModel product);
+  Future<List<ProductModel>> getMyProducts(String ownerId);
+  Future<ProductModel> addProduct(ProductModel product, String ownerId);
   Future<ProductModel> updateProduct(ProductModel product);
   Future<void> deleteProduct(String productId);
 }
 
 class MyStoreRemoteDataSourceImpl implements MyStoreRemoteDataSource {
-  final DioClient dioClient;
+  final ProductSupabaseDataSource productDataSource;
+  final SupabaseClientWrapper supabase;
 
-  MyStoreRemoteDataSourceImpl(this.dioClient);
+  MyStoreRemoteDataSourceImpl({
+    required this.productDataSource,
+    required this.supabase,
+  });
 
   @override
   Future<StoreModel> getMyStore() async {
-    final response = await dioClient.get('/store/my');
-    return StoreModel.fromJson(response.data);
+    // TODO: Implementar quando criar tabela de stores no Supabase
+    throw UnimplementedError('getMyStore ainda não implementado');
   }
 
   @override
-  Future<List<ProductModel>> getMyProducts() async {
-    final response = await dioClient.get('/store/my/products');
-    final List<dynamic> data = response.data;
-    return data.map((json) => ProductModel.fromJson(json)).toList();
+  Future<List<ProductModel>> getMyProducts(String ownerId) async {
+    return await productDataSource.getMyProducts(ownerId);
   }
 
   @override
-  Future<ProductModel> addProduct(ProductModel product) async {
-    final response = await dioClient.post(
-      '/store/my/products',
-      data: product.toJson(),
-    );
-    return ProductModel.fromJson(response.data);
+  Future<ProductModel> addProduct(ProductModel product, String ownerId) async {
+    return await productDataSource.createProduct(product, ownerId);
   }
 
   @override
   Future<ProductModel> updateProduct(ProductModel product) async {
-    final response = await dioClient.put(
-      '/store/my/products/${product.id}',
-      data: product.toJson(),
-    );
-    return ProductModel.fromJson(response.data);
+    return await productDataSource.updateProduct(product.id, product);
   }
 
   @override
   Future<void> deleteProduct(String productId) async {
-    await dioClient.delete('/store/my/products/$productId');
+    await productDataSource.deleteProduct(productId);
   }
 }

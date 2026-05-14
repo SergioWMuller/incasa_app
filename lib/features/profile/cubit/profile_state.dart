@@ -1,31 +1,31 @@
 import 'package:equatable/equatable.dart';
 import 'package:incasa_app/domain/entities/profile/user.dart';
 
-sealed class ProfileState extends Equatable {
-  const ProfileState();
+enum ProfileStatus { loading, loaded, error }
+
+class ProfileState extends Equatable {
+  final ProfileStatus status;
+  final User? user;
+  final String? errorMessage;
+
+  const ProfileState({
+    this.status = ProfileStatus.loading,
+    this.user,
+    this.errorMessage,
+  });
 
   @override
-  List<Object?> get props => [];
-}
+  List<Object?> get props => [status, user, errorMessage];
 
-class ProfileLoading extends ProfileState {
-  const ProfileLoading();
-}
-
-class ProfileLoaded extends ProfileState {
-  final User user;
-
-  const ProfileLoaded(this.user);
-
-  @override
-  List<Object?> get props => [user];
-}
-
-class ProfileError extends ProfileState {
-  final String message;
-
-  const ProfileError(this.message);
-
-  @override
-  List<Object?> get props => [message];
+  ProfileState copyWith({
+    ProfileStatus? status,
+    User? user,
+    String? errorMessage,
+  }) {
+    return ProfileState(
+      status: status ?? this.status,
+      user: user ?? this.user,
+      errorMessage: errorMessage ?? this.errorMessage,
+    );
+  }
 }

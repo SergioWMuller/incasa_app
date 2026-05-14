@@ -1,5 +1,9 @@
-import 'package:get_it/get_it.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
+import 'package:incasa_app/core/network/supabase_client.dart';
 import 'package:incasa_app/core/network/dio_client.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_it/get_it.dart';
 import 'package:incasa_app/core/theme/theme_cubit.dart';
 import 'package:incasa_app/data/datasources/local/auth_local_data_source.dart';
 import 'package:incasa_app/features/auth/services/auth_service.dart';
@@ -10,7 +14,9 @@ import 'package:incasa_app/data/datasources/local/profile_local_data_source.dart
 import 'package:incasa_app/data/datasources/local/theme_local_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/marketplace_remote_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/my_store_remote_data_source.dart';
+import 'package:incasa_app/data/datasources/remote/product_supabase_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/profile_remote_data_source.dart';
+import 'package:incasa_app/data/datasources/remote/user_supabase_data_source.dart';
 import 'package:incasa_app/data/repositories/marketplace/marketplace_repository_impl.dart';
 import 'package:incasa_app/data/repositories/my_store/my_store_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/profile_repository_impl.dart';
@@ -22,6 +28,7 @@ import 'package:incasa_app/domain/repositories/profile/theme_repository.dart';
 import 'package:incasa_app/domain/usecases/marketplace/get_categories.dart';
 import 'package:incasa_app/domain/usecases/marketplace/get_products.dart';
 import 'package:incasa_app/domain/usecases/marketplace/search_products.dart';
+import 'package:incasa_app/domain/usecases/my_store/add_product.dart';
 import 'package:incasa_app/domain/usecases/my_store/get_my_products.dart';
 import 'package:incasa_app/domain/usecases/my_store/get_my_store.dart';
 import 'package:incasa_app/domain/usecases/profile/get_theme_mode.dart';
@@ -32,12 +39,39 @@ import 'package:incasa_app/domain/usecases/profile/save_theme_color.dart';
 import 'package:incasa_app/features/marketplace/cubit/marketplace_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_cubit.dart';
 import 'package:incasa_app/features/profile/cubit/profile_cubit.dart';
+import 'package:incasa_app/features/address/cubit/address_cubit.dart';
 
 final sl = GetIt.instance; // sl = Service Locator
 
 Future<void> initializeDependencies() async {
   // ============== Core ==============
+
+  // MVP - Firebase (Auth) ✅
+  sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+  sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
+
+  // MVP - Supabase (Database) ✅
+  sl.registerLazySingleton<SupabaseClientWrapper>(
+    () => SupabaseClientWrapper(),
+  );
+
+  // DioClient para Marketplace/MyStore (até migrar para Supabase) ✅
   sl.registerLazySingleton<DioClient>(() => DioClient());
+
+  // Dio para chamadas HTTP simples (CEP, etc)
+  sl.registerLazySingleton<Dio>(
+    () => Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    ),
+  );
+
   sl.registerLazySingleton<AuthService>(() => AuthService());
 
   // ============== Data Sources - Marketplace ==============
@@ -53,16 +87,23 @@ Future<void> initializeDependencies() async {
     () => MyStoreLocalDataSourceImpl(),
   );
   sl.registerLazySingleton<MyStoreRemoteDataSource>(
-    () => MyStoreRemoteDataSourceImpl(sl()),
+    () => MyStoreRemoteDataSourceImpl(productDataSource: sl(), supabase: sl()),
   );
 
   // ============== Data Sources - Profile ==============
   sl.registerLazySingleton<ProfileLocalDataSource>(
     () => ProfileLocalDataSourceImpl(authLocalDataSource: sl()),
   );
+
+  // MVP - Firebase (USAR AGORA) ✅
   sl.registerLazySingleton<ProfileRemoteDataSource>(
-    () => ProfileRemoteDataSourceImpl(sl()),
+    () => ProfileFirebaseDataSourceImpl(firestore: sl(), firebaseAuth: sl()),
   );
+
+  // Futuro - Laravel (descomentar quando migrar) 📦
+  // sl.registerLazySingleton<ProfileRemoteDataSource>(
+  //   () => ProfileApiDataSourceImpl(sl()),
+  // );
 
   // ============== Data Sources - Theme ==============
   sl.registerLazySingleton<ThemeLocalDataSource>(
@@ -72,6 +113,16 @@ Future<void> initializeDependencies() async {
   // ============== Data Sources - Auth ==============
   sl.registerLazySingleton<AuthLocalDataSource>(
     () => AuthLocalDataSourceImpl(),
+  );
+
+  // ============== Data Sources - User (Supabase) ==============
+  sl.registerLazySingleton<UserSupabaseDataSource>(
+    () => UserSupabaseDataSourceImpl(supabase: sl()),
+  );
+
+  // ============== Data Sources - Product (Supabase) ==============
+  sl.registerLazySingleton<ProductSupabaseDataSource>(
+    () => ProductSupabaseDataSourceImpl(supabase: sl()),
   );
 
   // ============== Repositories - Marketplace ==============
@@ -104,6 +155,7 @@ Future<void> initializeDependencies() async {
   // ============== Use Cases - MyStore ==============
   sl.registerFactory(() => GetMyStore(sl()));
   sl.registerFactory(() => GetMyProducts(sl()));
+  sl.registerFactory(() => AddProduct(sl()));
 
   // ============== Use Cases - Profile ==============
   sl.registerFactory(() => GetUserProfile(sl()));
@@ -114,35 +166,53 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => GetThemeColor(sl()));
   sl.registerFactory(() => SaveThemeColor(sl()));
 
-  // ============== Cubits - Marketplace ==============
-  sl.registerFactory(
-    () => MarketplaceCubit(
-      getProductsUseCase: sl(),
-      getCategoriesUseCase: sl(),
-      searchProductsUseCase: sl(),
-    ),
-  );
-
-  // ============== Cubits - MyStore ==============
-  sl.registerFactory(
-    () => MyStoreCubit(getMyStoreUseCase: sl(), getMyProductsUseCase: sl()),
-  );
-
-  // ============== Cubits - Profile ==============
-  sl.registerFactory(() => ProfileCubit(getUserProfileUseCase: sl()));
-
   // ============== Cubits - Auth ==============
-  sl.registerFactory(
-    () => AuthCubit(authService: sl(), authLocalDataSource: sl()),
+  // Singleton pois precisa manter estado de autenticação global
+  sl.registerLazySingleton(
+    () => AuthCubit(
+      authService: sl(),
+      authLocalDataSource: sl(),
+      userSupabaseDataSource: sl(),
+    )..checkAuthStatus(),
   );
 
   // ============== Cubits - Theme ==============
-  sl.registerFactory(
+  // Singleton pois o tema é global na aplicação
+  sl.registerLazySingleton(
     () => ThemeCubit(
       getThemeModeUseCase: sl(),
       saveThemeModeUseCase: sl(),
       getThemeColorUseCase: sl(),
       saveThemeColorUseCase: sl(),
-    ),
+    )..loadThemeSettings(),
   );
+
+  // ============== Cubits - Marketplace ==============
+  // Singleton para manter cache dos produtos
+  sl.registerLazySingleton(
+    () => MarketplaceCubit(
+      getProductsUseCase: sl(),
+      getCategoriesUseCase: sl(),
+      searchProductsUseCase: sl(),
+    )..loadMarketplace(),
+  );
+
+  // ============== Cubits - MyStore ==============
+  // Singleton para manter estado da loja
+  sl.registerLazySingleton(
+    () => MyStoreCubit(
+      getMyStoreUseCase: sl(),
+      getMyProductsUseCase: sl(),
+      addProductUseCase: sl(),
+    )..loadMyStore(),
+  );
+
+  // ============== Cubits - Profile ==============
+  // Singleton para manter dados do perfil
+  // Nota: loadProfile() é chamado pelo AuthCubit listener quando usuário loga
+  sl.registerLazySingleton(() => ProfileCubit(getUserProfileUseCase: sl()));
+
+  // ============== Cubits - Address ==============
+  // Factory pois cada tela de cadastro de endereço é independente
+  sl.registerFactory(() => AddressCubit(sl()));
 }

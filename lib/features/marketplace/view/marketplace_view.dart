@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/features/marketplace/cubit/marketplace_cubit.dart';
 import 'package:incasa_app/features/marketplace/cubit/marketplace_state.dart';
 import 'package:incasa_app/features/marketplace/widgets/marketplace_loaded_widget.dart';
@@ -15,14 +16,15 @@ class MarketplaceView extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: BlocBuilder<MarketplaceCubit, MarketplaceState>(
+          bloc: sl<MarketplaceCubit>(),
           builder: (context, state) {
             // Pattern matching com switch expression
-            return switch (state) {
-              MarketplaceLoading() => const Center(
+            return switch (state.status) {
+              MarketplaceStatus.loading => const Center(
                 child: CircularProgressIndicator(),
               ),
-              MarketplaceLoaded() => MarketplaceLoadedWidget(state: state),
-              MarketplaceError(:final message) => Center(
+              MarketplaceStatus.loaded => MarketplaceLoadedWidget(state: state),
+              MarketplaceStatus.error => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -37,7 +39,7 @@ class MarketplaceView extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
-                    Text(message),
+                    Text(state.errorMessage ?? 'Erro desconhecido'),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () =>

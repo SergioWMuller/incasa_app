@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/theme/theme_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_state.dart';
+import 'package:incasa_app/features/my_store/view/add_product_view.dart';
 import 'package:incasa_app/features/my_store/widgets/my_store_product_card.dart';
 
 /// Widget de apresentação para MyStore (StatelessWidget)
 /// Usa DefaultTabController para gerenciar tabs sem StatefulWidget
 class MyStoreLoadedWidget extends StatelessWidget {
-  final MyStoreLoaded state;
+  final MyStoreState state;
 
   const MyStoreLoadedWidget({super.key, required this.state});
 
@@ -37,7 +38,7 @@ class MyStoreLoadedWidget extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
-                        state.store.imageUrl,
+                        state.store!.imageUrl,
                         width: 120,
                         height: 120,
                         fit: BoxFit.cover,
@@ -51,13 +52,13 @@ class MyStoreLoadedWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      state.store.name,
+                      state.store!.name,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      state.store.description,
+                      state.store!.description,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
@@ -66,11 +67,11 @@ class MyStoreLoadedWidget extends StatelessWidget {
                       builder: (context, themeState) {
                         return Chip(
                           label: Text(
-                            state.store.isActive
+                            state.store!.isActive
                                 ? 'Loja Ativa'
                                 : 'Loja Inativa',
                           ),
-                          backgroundColor: state.store.isActive
+                          backgroundColor: state.store!.isActive
                               ? themeState.color.color
                               : Colors.grey,
                           labelStyle: const TextStyle(color: Colors.white),
@@ -79,7 +80,7 @@ class MyStoreLoadedWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      '${state.products.length} produtos cadastrados',
+                      '${state.products!.length} produtos cadastrados',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -89,23 +90,22 @@ class MyStoreLoadedWidget extends StatelessWidget {
 
             // Tab 2: Lista de produtos
             Scaffold(
-              body: state.products.isEmpty
+              body: state.products!.isEmpty
                   ? const Center(child: Text('Nenhum produto cadastrado'))
                   : ListView.builder(
                       physics: const BouncingScrollPhysics(),
-                      itemCount: state.products.length,
+                      itemCount: state.products!.length,
                       itemBuilder: (context, index) {
                         return MyStoreProductCard(
-                          product: state.products[index],
+                          product: state.products![index],
                         );
                       },
                     ),
               floatingActionButton: FloatingActionButton(
                 onPressed: () {
-                  // TODO: Navegar para tela de adicionar produto
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Adicionar produto (em breve)'),
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AddProductView(),
                     ),
                   );
                 },

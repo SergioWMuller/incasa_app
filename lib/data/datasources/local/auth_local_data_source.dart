@@ -50,6 +50,5 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   Future<void> clearUserData() async {
     final prefs = await _prefs;
     await prefs.remove(_keyUserGoogleAccount);
-    print('🗑️ Dados do usuário removidos do SharedPreferences');
   }
 }

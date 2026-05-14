@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_state.dart';
 import 'package:incasa_app/features/my_store/widgets/my_store_loaded_widget.dart';
@@ -10,11 +11,17 @@ class MyStoreView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MyStoreCubit, MyStoreState>(
+      bloc: sl<MyStoreCubit>(),
       builder: (context, state) {
-        return switch (state) {
-          MyStoreLoading() => const Center(child: CircularProgressIndicator()),
-          MyStoreLoaded() => MyStoreLoadedWidget(state: state),
-          MyStoreError(:final message) => Center(
+        return switch (state.status) {
+          MyStoreStatus.inicial => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          MyStoreStatus.loading => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          MyStoreStatus.loaded => MyStoreLoadedWidget(state: state),
+          MyStoreStatus.error => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -25,10 +32,10 @@ class MyStoreView extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
-                Text(message),
+                Text(state.errorMessage ?? 'Erro desconhecido'),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () => context.read<MyStoreCubit>().loadMyStore(),
+                  onPressed: () => sl<MyStoreCubit>().loadMyStore(),
                   child: const Text('Tentar Novamente'),
                 ),
               ],

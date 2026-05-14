@@ -1,45 +1,222 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:incasa_app/domain/entities/profile/user.dart';
 
 class UserModel extends User {
   const UserModel({
-    required super.id,
-    required super.name,
-    required super.email,
-    super.avatarUrl,
-    super.phone,
+    // Obrigatórios
+    required super.uid,
     required super.createdAt,
+    super.email,
+    super.fullName,
+    super.displayName,
+    super.photoUrl,
+    // Contato
+    super.phoneNumber,
+    super.cpf,
+    // Timestamps
+    super.lastSignInTime,
+    // Vendedor
+    super.sellerRating = 0.0,
+    super.isSeller = false,
+    // Endereço
+    super.defaultShippingStreet,
+    super.defaultShippingNumber,
+    super.defaultShippingComplement,
+    super.defaultShippingNeighborhood,
+    super.defaultShippingCity,
+    super.defaultShippingState,
+    super.defaultShippingZipCode,
+    // Verificações
+    super.emailVerified = false,
+    super.phoneVerified = false,
+    super.isPhoneWhatsApp = false,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
+  // ========================================
+  // SUPABASE (MVP - USAR AGORA) ✅
+  // ========================================
+
+  /// Converte dados do Supabase para UserModel
+  factory UserModel.fromSupabase(Map<String, dynamic> map) {
     return UserModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
-      phone: json['phone'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      uid: map['uid'] as String,
+      email: map['email'] as String?,
+      fullName: map['full_name'] as String?,
+      displayName: map['display_name'] as String?,
+      photoUrl: map['photo_url'] as String?,
+      phoneNumber: map['phone_number'] as String?,
+      cpf: map['cpf'] as String?,
+      createdAt: DateTime.parse(map['creation_time'] as String),
+      lastSignInTime: map['last_sign_in_time'] != null
+          ? DateTime.parse(map['last_sign_in_time'] as String)
+          : null,
+      sellerRating: map['seller_rating'] != null
+          ? (map['seller_rating'] as num).toDouble()
+          : 0.0,
+      isSeller: map['is_seller'] as bool? ?? false,
+      defaultShippingStreet: map['default_shipping_street'] as String?,
+      defaultShippingNumber: map['default_shipping_number'] as String?,
+      defaultShippingComplement: map['default_shipping_complement'] as String?,
+      defaultShippingNeighborhood:
+          map['default_shipping_neighborhood'] as String?,
+      defaultShippingCity: map['default_shipping_city'] as String?,
+      defaultShippingState: map['default_shipping_state'] as String?,
+      defaultShippingZipCode: map['default_shipping_zip_code'] as String?,
+      emailVerified: map['email_verified'] as bool? ?? false,
+      phoneVerified: map['phone_verified'] as bool? ?? false,
+      isPhoneWhatsApp: map['is_phone_whatsapp'] as bool? ?? false,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  /// Converte UserModel para Supabase
+  Map<String, dynamic> toSupabase() {
     return {
-      'id': id,
-      'name': name,
+      'uid': uid,
       'email': email,
-      'avatarUrl': avatarUrl,
-      'phone': phone,
-      'createdAt': createdAt.toIso8601String(),
+      'full_name': fullName,
+      'display_name': displayName,
+      'photo_url': photoUrl,
+      'phone_number': phoneNumber,
+      'cpf': cpf,
+      'creation_time': createdAt.toIso8601String(),
+      if (lastSignInTime != null)
+        'last_sign_in_time': lastSignInTime!.toIso8601String(),
+      'seller_rating': sellerRating,
+      'is_seller': isSeller,
+      'default_shipping_street': defaultShippingStreet,
+      'default_shipping_number': defaultShippingNumber,
+      'default_shipping_complement': defaultShippingComplement,
+      'default_shipping_neighborhood': defaultShippingNeighborhood,
+      'default_shipping_city': defaultShippingCity,
+      'default_shipping_state': defaultShippingState,
+      'default_shipping_zip_code': defaultShippingZipCode,
+      'email_verified': emailVerified,
+      'phone_verified': phoneVerified,
+      'is_phone_whatsapp': isPhoneWhatsApp,
     };
   }
 
+  // ========================================
+  // FIREBASE (COMPATIBILIDADE) ✅
+  // ========================================
+
+  /// Converte DocumentSnapshot do Firestore para UserModel
+  factory UserModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return UserModel(
+      uid: doc.id,
+      email: data['email'] as String?,
+      fullName: data['name'] as String?,
+      displayName: data['name'] as String?,
+      photoUrl: data['avatarUrl'] as String?,
+      phoneNumber: data['phone'] as String?,
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+    );
+  }
+
+  /// Converte UserModel para Map do Firestore
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': fullName ?? displayName,
+      'email': email,
+      'avatarUrl': photoUrl,
+      'phone': phoneNumber,
+      'createdAt': Timestamp.fromDate(createdAt),
+    };
+  }
+
+  // ========================================
+  // LARAVEL API (FUTURO) 📦
+  // ========================================
+
+  /// Converte JSON da API Laravel para UserModel
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      uid: json['uid'] as String,
+      email: json['email'] as String?,
+      fullName: json['fullName'] as String?,
+      displayName: json['displayName'] as String?,
+      photoUrl: json['photoUrl'] as String?,
+      phoneNumber: json['phoneNumber'] as String?,
+      cpf: json['cpf'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      lastSignInTime: json['lastSignInTime'] != null
+          ? DateTime.parse(json['lastSignInTime'] as String)
+          : null,
+      sellerRating: json['sellerRating'] != null
+          ? json['sellerRating'] as double
+          : 0.0,
+      isSeller: json['isSeller'] as bool? ?? false,
+      defaultShippingStreet: json['defaultShippingStreet'] as String?,
+      defaultShippingNumber: json['defaultShippingNumber'] as String?,
+      defaultShippingComplement: json['defaultShippingComplement'] as String?,
+      defaultShippingNeighborhood:
+          json['defaultShippingNeighborhood'] as String?,
+      defaultShippingCity: json['defaultShippingCity'] as String?,
+      defaultShippingState: json['defaultShippingState'] as String?,
+      defaultShippingZipCode: json['defaultShippingZipCode'] as String?,
+      emailVerified: json['emailVerified'] as bool? ?? false,
+      phoneVerified: json['phoneVerified'] as bool? ?? false,
+      isPhoneWhatsApp: json['isPhoneWhatsApp'] as bool? ?? false,
+    );
+  }
+
+  /// Converte UserModel para JSON para API Laravel
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'email': email,
+      'fullName': fullName,
+      'displayName': displayName,
+      'photoUrl': photoUrl,
+      'phoneNumber': phoneNumber,
+      'cpf': cpf,
+      'createdAt': createdAt.toIso8601String(),
+      if (lastSignInTime != null)
+        'lastSignInTime': lastSignInTime!.toIso8601String(),
+      'sellerRating': sellerRating,
+      'isSeller': isSeller,
+      'defaultShippingStreet': defaultShippingStreet,
+      'defaultShippingNumber': defaultShippingNumber,
+      'defaultShippingComplement': defaultShippingComplement,
+      'defaultShippingNeighborhood': defaultShippingNeighborhood,
+      'defaultShippingCity': defaultShippingCity,
+      'defaultShippingState': defaultShippingState,
+      'defaultShippingZipCode': defaultShippingZipCode,
+      'emailVerified': emailVerified,
+      'phoneVerified': phoneVerified,
+      'isPhoneWhatsApp': isPhoneWhatsApp,
+    };
+  }
+
+  // ========================================
+  // CONVERSÃO DE/PARA ENTITY
+  // ========================================
+
+  /// Converte Entity pura para Model
   factory UserModel.fromEntity(User user) {
     return UserModel(
-      id: user.id,
-      name: user.name,
+      uid: user.uid,
       email: user.email,
-      avatarUrl: user.avatarUrl,
-      phone: user.phone,
+      fullName: user.fullName,
+      displayName: user.displayName,
+      photoUrl: user.photoUrl,
+      phoneNumber: user.phoneNumber,
+      cpf: user.cpf,
       createdAt: user.createdAt,
+      lastSignInTime: user.lastSignInTime,
+      sellerRating: user.sellerRating,
+      isSeller: user.isSeller,
+      defaultShippingStreet: user.defaultShippingStreet,
+      defaultShippingNumber: user.defaultShippingNumber,
+      defaultShippingComplement: user.defaultShippingComplement,
+      defaultShippingNeighborhood: user.defaultShippingNeighborhood,
+      defaultShippingCity: user.defaultShippingCity,
+      defaultShippingState: user.defaultShippingState,
+      defaultShippingZipCode: user.defaultShippingZipCode,
+      emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
+      isPhoneWhatsApp: user.isPhoneWhatsApp,
     );
   }
 }

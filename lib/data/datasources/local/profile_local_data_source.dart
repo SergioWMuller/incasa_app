@@ -21,11 +21,13 @@ class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
 
     // Mapeia os dados do Firebase Auth para o formato do UserModel
     final userMap = {
-      "id": userData['uid'] ?? '',
-      "name": userData['displayName'] ?? 'Usuário',
-      "email": userData['email'] ?? '',
-      "avatarUrl": userData['photoURL'],
-      "phone": userData['phoneNumber'],
+      "uid": userData['uid'] ?? '',
+      "email": userData['email'],
+      "fullName": userData['displayName'],
+      "displayName": userData['displayName'],
+      "photoUrl": userData['photoURL'],
+      "phoneNumber": userData['phoneNumber'],
+      "emailVerified": userData['emailVerified'] ?? false,
       "createdAt": DateTime.now()
           .toIso8601String(), // Firebase não retorna createdAt facilmente
     };

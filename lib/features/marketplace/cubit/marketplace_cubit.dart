@@ -16,11 +16,11 @@ class MarketplaceCubit extends Cubit<MarketplaceState> {
     required this.getProductsUseCase,
     required this.getCategoriesUseCase,
     required this.searchProductsUseCase,
-  }) : super(const MarketplaceLoading());
+  }) : super(const MarketplaceState());
 
   /// Carrega produtos e categorias
   Future<void> loadMarketplace() async {
-    emit(const MarketplaceLoading());
+    emit(const MarketplaceState(status: MarketplaceStatus.loading));
 
     // Busca produtos e categorias em paralelo
     final productsResult = await getProductsUseCase(const NoParams());
@@ -32,36 +32,57 @@ class MarketplaceCubit extends Cubit<MarketplaceState> {
         switch (categoriesResult) {
           case Success():
             emit(
-              MarketplaceLoaded(
+              MarketplaceState(
+                status: MarketplaceStatus.loaded,
                 products: productsResult.data,
                 categories: categoriesResult.data,
               ),
             );
           case Error(:final failure):
-            emit(MarketplaceError(failure.message));
+            emit(
+              MarketplaceState(
+                status: MarketplaceStatus.error,
+                errorMessage: failure.message,
+              ),
+            );
         }
       case Error(:final failure):
-        emit(MarketplaceError(failure.message));
+        emit(
+          MarketplaceState(
+            status: MarketplaceStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
     }
   }
 
   /// Busca produtos por query
   Future<void> searchProducts(String query) async {
-    emit(const MarketplaceLoading());
+    emit(const MarketplaceState(status: MarketplaceStatus.loading));
 
     final result = await searchProductsUseCase(SearchParams(query));
 
     switch (result) {
       case Success(:final data):
         // Mantém as categorias atuais
-        final currentState = state;
-        final categories = currentState is MarketplaceLoaded
-            ? currentState.categories
+        final categories = state.status == MarketplaceStatus.loaded
+            ? state.categories
             : <Category>[];
 
-        emit(MarketplaceLoaded(products: data, categories: categories));
+        emit(
+          MarketplaceState(
+            status: MarketplaceStatus.loaded,
+            products: data,
+            categories: categories,
+          ),
+        );
       case Error(:final failure):
-        emit(MarketplaceError(failure.message));
+        emit(
+          MarketplaceState(
+            status: MarketplaceStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
     }
   }
 }

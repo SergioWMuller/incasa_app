@@ -21,29 +21,34 @@ class ProfileLoadedWidget extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 50,
-                backgroundImage: user.avatarUrl != null
-                    ? NetworkImage(user.avatarUrl!)
+                backgroundImage: user.photoUrl != null
+                    ? NetworkImage(user.photoUrl!)
                     : null,
-                child: user.avatarUrl == null
+                child: user.photoUrl == null
                     ? Text(
-                        user.name.substring(0, 1).toUpperCase(),
+                        (user.displayName ?? user.fullName ?? user.email ?? 'U')
+                            .substring(0, 1)
+                            .toUpperCase(),
                         style: const TextStyle(fontSize: 40),
                       )
                     : null,
               ),
               const SizedBox(height: 16),
               Text(
-                user.name,
+                user.displayName ?? user.fullName ?? 'Usuário',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
-              Text(user.email, style: Theme.of(context).textTheme.bodyMedium),
-              if (user.phone != null) ...[
+              Text(
+                user.email ?? '',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (user.phoneNumber != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  user.phone!,
+                  user.phoneNumber!,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
