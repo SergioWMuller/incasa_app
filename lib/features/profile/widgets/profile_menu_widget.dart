@@ -54,15 +54,6 @@ class ProfileMenuWidget extends StatelessWidget {
         ),
         const Divider(),
         ListTile(
-          leading: const Icon(Icons.location_on),
-          title: const Text('Endereços'),
-          trailing: const Icon(Icons.arrow_forward_ios),
-          onTap: () {
-            // TODO: Navegar para endereços
-          },
-        ),
-        const Divider(),
-        ListTile(
           leading: const Icon(Icons.help),
           title: const Text('Ajuda'),
           trailing: const Icon(Icons.arrow_forward_ios),

@@ -41,11 +41,11 @@ class _AppShellState extends State<AppShell> {
       bloc: sl<AuthCubit>(),
       listener: (context, authState) {
         // Quando o usuário faz logout, limpa o estado do perfil
-        if (authState.status == AuthStatus.unauthenticated) {
+        if (authState.isUnauthenticated) {
           sl<ProfileCubit>().clearProfile();
         }
         // Quando o usuário faz login, recarrega o perfil
-        else if (authState.status == AuthStatus.authenticated) {
+        else if (authState.isAuthenticated) {
           // Evita reload se já estiver carregando ou já carregado
           final profileState = sl<ProfileCubit>().state;
           if (profileState.status != ProfileStatus.loaded) {

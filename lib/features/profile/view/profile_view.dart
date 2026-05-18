@@ -24,12 +24,12 @@ class ProfileView extends StatelessWidget {
           final stateManager = context
               .findAncestorStateOfType<_AuthStateManagerState>();
 
-          if (authState.status == AuthStatus.unauthenticated) {
+          if (authState.isUnauthenticated) {
             sl<ProfileCubit>().clearProfile();
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Logout realizado com sucesso!')),
             );
-          } else if (authState.status == AuthStatus.authenticated) {
+          } else if (authState.isAuthenticated) {
             // Só navega se ainda não navegou nesta sessão
             if (stateManager != null &&
                 !stateManager._hasNavigatedToOnboarding &&
@@ -66,7 +66,7 @@ class ProfileView extends StatelessWidget {
                 );
               }
             }
-          } else if (authState.status == AuthStatus.error) {
+          } else if (authState.hasError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(authState.errorMessage ?? 'Erro desconhecido'),
@@ -78,7 +78,7 @@ class ProfileView extends StatelessWidget {
           bloc: sl<AuthCubit>(),
           builder: (context, authState) {
             // Se não está autenticado, mostrar tela de login
-            if (authState.status != AuthStatus.authenticated) {
+            if (!authState.isAuthenticated) {
               return ProfileAuthWidget(authState: authState);
             }
 
@@ -149,7 +149,7 @@ class _AuthStateManagerState extends State<_AuthStateManager> {
     // Carrega o perfil se usuário já estiver autenticado
     final authState = sl<AuthCubit>().state;
 
-    if (authState.status == AuthStatus.authenticated) {
+    if (authState.isAuthenticated) {
       final profileState = sl<ProfileCubit>().state;
       if (profileState.status == ProfileStatus.loading) {
         sl<ProfileCubit>().loadProfile();
@@ -171,7 +171,7 @@ class _AuthStateManagerState extends State<_AuthStateManager> {
       bloc: sl<AuthCubit>(),
       listener: (context, state) {
         // Reset flag quando usuário desloga
-        if (state.status == AuthStatus.unauthenticated) {
+        if (state.isUnauthenticated) {
           setState(() {
             _hasNavigatedToOnboarding = false;
           });

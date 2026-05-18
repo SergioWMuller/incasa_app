@@ -14,6 +14,14 @@ class AuthState extends Equatable {
     this.errorMessage,
   });
 
+  // Getters para facilitar verificações (seguindo padrão do projeto)
+  bool get isAuthenticated =>
+      status == AuthStatus.authenticated && user != null;
+  bool get isUnauthenticated =>
+      status == AuthStatus.unauthenticated || user == null;
+  bool get isLoading => status == AuthStatus.loading;
+  bool get hasError => status == AuthStatus.error;
+
   @override
   List<Object?> get props => [status, user, errorMessage];
 

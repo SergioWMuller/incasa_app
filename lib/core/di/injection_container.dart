@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:incasa_app/core/network/supabase_client.dart';
 import 'package:incasa_app/core/network/dio_client.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:incasa_app/core/theme/theme_cubit.dart';
 import 'package:incasa_app/data/datasources/local/auth_local_data_source.dart';
 import 'package:incasa_app/features/auth/services/auth_service.dart';
@@ -17,14 +19,17 @@ import 'package:incasa_app/data/datasources/remote/my_store_remote_data_source.d
 import 'package:incasa_app/data/datasources/remote/product_supabase_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/profile_remote_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/user_supabase_data_source.dart';
+import 'package:incasa_app/data/datasources/remote/address_supabase_data_source.dart';
 import 'package:incasa_app/data/repositories/marketplace/marketplace_repository_impl.dart';
 import 'package:incasa_app/data/repositories/my_store/my_store_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/profile_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/theme_repository_impl.dart';
+import 'package:incasa_app/data/repositories/profile/address_repository_impl.dart';
 import 'package:incasa_app/domain/repositories/marketplace/marketplace_repository.dart';
 import 'package:incasa_app/domain/repositories/my_store/my_store_repository.dart';
 import 'package:incasa_app/domain/repositories/profile/profile_repository.dart';
 import 'package:incasa_app/domain/repositories/profile/theme_repository.dart';
+import 'package:incasa_app/domain/repositories/profile/address_repository.dart';
 import 'package:incasa_app/domain/usecases/marketplace/get_categories.dart';
 import 'package:incasa_app/domain/usecases/marketplace/get_products.dart';
 import 'package:incasa_app/domain/usecases/marketplace/search_products.dart';
@@ -45,6 +50,10 @@ final sl = GetIt.instance; // sl = Service Locator
 
 Future<void> initializeDependencies() async {
   // ============== Core ==============
+
+  // SharedPreferences
+  final sharedPreferences = await SharedPreferences.getInstance();
+  sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
 
   // MVP - Firebase (Auth) ✅
   sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
@@ -125,6 +134,11 @@ Future<void> initializeDependencies() async {
     () => ProductSupabaseDataSourceImpl(supabase: sl()),
   );
 
+  // ============== Data Sources - Address (Supabase) ==============
+  sl.registerLazySingleton<AddressSupabaseDataSource>(
+    () => AddressSupabaseDataSourceImpl(supabase: sl()),
+  );
+
   // ============== Repositories - Marketplace ==============
   sl.registerLazySingleton<MarketplaceRepository>(
     () => MarketplaceRepositoryImpl(
@@ -141,6 +155,11 @@ Future<void> initializeDependencies() async {
   // ============== Repositories - Profile ==============
   sl.registerLazySingleton<ProfileRepository>(
     () => ProfileRepositoryImpl(remoteDataSource: sl(), localDataSource: sl()),
+  );
+
+  // ============== Repositories - Address ==============
+  sl.registerLazySingleton<AddressRepository>(
+    () => AddressRepositoryImpl(dataSource: sl()),
   );
 
   // ============== Repositories - Theme ==============
@@ -213,6 +232,11 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton(() => ProfileCubit(getUserProfileUseCase: sl()));
 
   // ============== Cubits - Address ==============
-  // Factory pois cada tela de cadastro de endereço é independente
-  sl.registerFactory(() => AddressCubit(sl()));
+  // Factory pois cada tela de endereço é independente (formulário ou lista)
+  sl.registerFactory(() => AddressCubit(sl(), sl(), sl(), sl()));
+
+  // ============== Geolocator ==============
+  sl.registerLazySingleton<GeolocatorPlatform>(
+    () => GeolocatorPlatform.instance,
+  );
 }

@@ -47,8 +47,6 @@ CREATE TABLE users (
   cpf VARCHAR,
   creation_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_sign_in_time TIMESTAMP,
-  seller_rating NUMERIC DEFAULT 0.00,
-  is_seller BOOLEAN DEFAULT false,
   default_shipping_street VARCHAR,
   default_shipping_number VARCHAR,
   default_shipping_complement VARCHAR,

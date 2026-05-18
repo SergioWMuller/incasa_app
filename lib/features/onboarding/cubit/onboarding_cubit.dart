@@ -413,15 +413,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         cpf: existingUser.cpf,
         createdAt: existingUser.createdAt,
         lastSignInTime: DateTime.now(),
-        sellerRating: existingUser.sellerRating,
-        isSeller: existingUser.isSeller,
-        defaultShippingStreet: existingUser.defaultShippingStreet,
-        defaultShippingNumber: existingUser.defaultShippingNumber,
-        defaultShippingComplement: existingUser.defaultShippingComplement,
-        defaultShippingNeighborhood: existingUser.defaultShippingNeighborhood,
-        defaultShippingCity: existingUser.defaultShippingCity,
-        defaultShippingState: existingUser.defaultShippingState,
-        defaultShippingZipCode: existingUser.defaultShippingZipCode,
       );
 
       await userSupabaseDataSource.updateUser(firebaseUser.uid, updatedUser);
@@ -475,15 +466,6 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           cpf: cpf,
           createdAt: existingUser.createdAt,
           lastSignInTime: DateTime.now(),
-          sellerRating: existingUser.sellerRating,
-          isSeller: existingUser.isSeller,
-          defaultShippingStreet: existingUser.defaultShippingStreet,
-          defaultShippingNumber: existingUser.defaultShippingNumber,
-          defaultShippingComplement: existingUser.defaultShippingComplement,
-          defaultShippingNeighborhood: existingUser.defaultShippingNeighborhood,
-          defaultShippingCity: existingUser.defaultShippingCity,
-          defaultShippingState: existingUser.defaultShippingState,
-          defaultShippingZipCode: existingUser.defaultShippingZipCode,
         );
 
         await userSupabaseDataSource.updateUser(firebaseUser.uid, updatedUser);

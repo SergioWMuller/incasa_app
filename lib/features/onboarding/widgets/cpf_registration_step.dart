@@ -71,7 +71,7 @@ class _CpfRegistrationStepState extends State<CpfRegistrationStep> {
             context,
             MaterialPageRoute(
               builder: (_) => BlocProvider(
-                create: (_) => sl<AddressCubit>(),
+                create: (_) => sl<AddressCubit>()..initialize(),
                 child: const AddressView(),
               ),
             ),

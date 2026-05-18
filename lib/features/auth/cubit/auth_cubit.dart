@@ -107,7 +107,6 @@ class AuthCubit extends Cubit<AuthState> {
           emailVerified: firebaseUser.emailVerified,
           createdAt: DateTime.now(),
         );
-
         await userSupabaseDataSource.createUser(newUser);
       } else {
         // Atualiza dados do usuário existente (caso tenha mudado algo no Firebase)
@@ -120,22 +119,11 @@ class AuthCubit extends Cubit<AuthState> {
           phoneNumber: firebaseUser.phoneNumber ?? existingUser.phoneNumber,
           emailVerified: firebaseUser.emailVerified,
           createdAt: existingUser.createdAt,
-          // Mantém dados adicionais do Supabase
           cpf: existingUser.cpf,
           lastSignInTime: DateTime.now(),
-          sellerRating: existingUser.sellerRating,
-          isSeller: existingUser.isSeller,
-          defaultShippingStreet: existingUser.defaultShippingStreet,
-          defaultShippingNumber: existingUser.defaultShippingNumber,
-          defaultShippingComplement: existingUser.defaultShippingComplement,
-          defaultShippingNeighborhood: existingUser.defaultShippingNeighborhood,
-          defaultShippingCity: existingUser.defaultShippingCity,
-          defaultShippingState: existingUser.defaultShippingState,
-          defaultShippingZipCode: existingUser.defaultShippingZipCode,
           phoneVerified: existingUser.phoneVerified,
           isPhoneWhatsApp: existingUser.isPhoneWhatsApp,
         );
-
         await userSupabaseDataSource.updateUser(firebaseUser.uid, updatedUser);
       }
     } catch (e) {

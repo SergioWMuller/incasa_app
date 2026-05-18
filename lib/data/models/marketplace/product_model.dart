@@ -1,7 +1,5 @@
 import 'package:incasa_app/domain/entities/marketplace/product.dart';
 
-/// Model (DTO) para Product
-/// Responsável por serialização/deserialização JSON
 class ProductModel extends Product {
   const ProductModel({
     required super.id,

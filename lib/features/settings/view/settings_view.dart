@@ -7,7 +7,7 @@ import 'package:incasa_app/core/theme/theme_cubit.dart';
 import 'package:incasa_app/data/datasources/local/auth_local_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/user_supabase_data_source.dart';
 import 'package:incasa_app/features/address/cubit/address_cubit.dart';
-import 'package:incasa_app/features/address/view/address_view.dart';
+import 'package:incasa_app/features/address/view/address_list_view.dart';
 import 'package:incasa_app/features/auth/cubit/auth_cubit.dart';
 import 'package:incasa_app/features/auth/cubit/auth_state.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
@@ -30,11 +30,8 @@ class SettingsView extends StatelessWidget {
           BlocBuilder<AuthCubit, AuthState>(
             bloc: sl<AuthCubit>(),
             builder: (context, authState) {
-              final isAuthenticated =
-                  authState.status == AuthStatus.authenticated;
-              final user = authState.user;
-
-              if (!isAuthenticated || user == null) {
+              // Usa getter do state (lógica no State, não na View)
+              if (!authState.isAuthenticated) {
                 return const ListTile(
                   leading: Icon(Icons.info_outline),
                   title: Text('Faça login para acessar suas configurações'),
@@ -57,7 +54,7 @@ class SettingsView extends StatelessWidget {
                               userSupabaseDataSource:
                                   sl<UserSupabaseDataSource>(),
                               authLocalDataSource: sl<AuthLocalDataSource>(),
-                              firebaseUser: user,
+                              firebaseUser: authState.user!,
                             ),
                             child: const RegistrationView(),
                           ),
@@ -68,16 +65,16 @@ class SettingsView extends StatelessWidget {
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.location_on),
-                    title: const Text('Endereço'),
-                    subtitle: const Text('Editar endereço'),
+                    title: const Text('Endereços'),
+                    subtitle: const Text('Gerenciar endereços'),
                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => BlocProvider(
-                            create: (_) => sl<AddressCubit>(),
-                            child: const AddressView(),
+                            create: (_) => sl<AddressCubit>()..initialize(),
+                            child: const AddressListView(),
                           ),
                         ),
                       );

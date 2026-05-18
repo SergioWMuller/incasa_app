@@ -11,7 +11,7 @@ class ProfileAuthWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = authState.status == AuthStatus.loading;
+    final isLoading = authState.isLoading;
 
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -72,7 +72,7 @@ class ProfileAuthWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              if (authState.status == AuthStatus.error) ...[
+              if (authState.hasError) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(

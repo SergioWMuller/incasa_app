@@ -1,6 +1,5 @@
 import 'package:incasa_app/domain/entities/marketplace/category.dart';
 
-/// Model (DTO) para Category
 class CategoryModel extends Category {
   const CategoryModel({
     required super.id,

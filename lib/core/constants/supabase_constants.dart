@@ -22,4 +22,5 @@ class SupabaseConstants {
   static const String productsTable = 'products';
   static const String categoriesTable = 'categories';
   static const String storesTable = 'stores';
+  static const String addressesTable = 'addresses';
 }

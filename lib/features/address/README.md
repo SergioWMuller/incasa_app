@@ -21,33 +21,50 @@ Adicione em `lib/core/di/injection_container.dart`:
 
 ```dart
 // Cubits
-sl.registerFactory(() => AddressCubit(sl<Dio>()));
+sl.registerFactory(() => AddressCubit(sl<Dio>(), sl<GeolocatorPlatform>(), sl<AddressRepository>(), sl<SharedPreferences>()));
 ```
 
 ### **2. Navegar para a Tela**
 
+**IMPORTANTE:** O mesmo cubit é reutilizado entre as telas da feature Address para manter estado persistente.
+
 ```dart
-// Usando Navigator
+// Para LISTAR endereços (primeira navegação)
 Navigator.push(
   context,
   MaterialPageRoute(
     builder: (_) => BlocProvider(
-      create: (_) => sl<AddressCubit>(),
+      create: (_) => sl<AddressCubit>()..initialize(), // ← Cria cubit e carrega lista
+      child: const AddressListView(),
+    ),
+  ),
+);
+
+// Para CRIAR novo endereço (navegação interna)
+final cubit = context.read<AddressCubit>();
+cubit.resetForm(); // Limpa campos do formulário
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => BlocProvider.value(
+      value: cubit, // ← Reusa o mesmo cubit
       child: const AddressView(),
     ),
   ),
 );
 
-// Ou usando GoRouter (exemplo)
-GoRoute(
-  path: '/address',
-  builder: (context, state) {
-    return BlocProvider(
-      create: (context) => sl<AddressCubit>(),
+// Para EDITAR endereço (navegação interna)
+final cubit = context.read<AddressCubit>();
+cubit.loadAddress(address); // Carrega dados do endereço
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => BlocProvider.value(
+      value: cubit, // ← Reusa o mesmo cubit
       child: const AddressView(),
-    );
-  },
-),
+    ),
+  ),
+);
 ```
 
 ## 🎨 Funcionalidades

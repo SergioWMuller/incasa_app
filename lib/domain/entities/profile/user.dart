@@ -16,10 +16,6 @@ class User extends Equatable {
   final DateTime createdAt; // creation_time
   final DateTime? lastSignInTime;
 
-  // VENDEDOR
-  final double sellerRating; // seller_rating (default 0.00)
-  final bool isSeller; // is_seller (default false)
-
   // ENDEREÇO DE ENTREGA PADRÃO
   final String? defaultShippingStreet;
   final String? defaultShippingNumber;
@@ -47,9 +43,6 @@ class User extends Equatable {
     this.cpf,
     // Timestamps
     this.lastSignInTime,
-    // Vendedor
-    this.sellerRating = 0.0,
-    this.isSeller = false,
     // Endereço
     this.defaultShippingStreet,
     this.defaultShippingNumber,
@@ -75,8 +68,6 @@ class User extends Equatable {
     cpf,
     createdAt,
     lastSignInTime,
-    sellerRating,
-    isSeller,
     defaultShippingStreet,
     defaultShippingNumber,
     defaultShippingComplement,

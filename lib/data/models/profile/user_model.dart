@@ -15,17 +15,6 @@ class UserModel extends User {
     super.cpf,
     // Timestamps
     super.lastSignInTime,
-    // Vendedor
-    super.sellerRating = 0.0,
-    super.isSeller = false,
-    // Endereço
-    super.defaultShippingStreet,
-    super.defaultShippingNumber,
-    super.defaultShippingComplement,
-    super.defaultShippingNeighborhood,
-    super.defaultShippingCity,
-    super.defaultShippingState,
-    super.defaultShippingZipCode,
     // Verificações
     super.emailVerified = false,
     super.phoneVerified = false,
@@ -50,18 +39,6 @@ class UserModel extends User {
       lastSignInTime: map['last_sign_in_time'] != null
           ? DateTime.parse(map['last_sign_in_time'] as String)
           : null,
-      sellerRating: map['seller_rating'] != null
-          ? (map['seller_rating'] as num).toDouble()
-          : 0.0,
-      isSeller: map['is_seller'] as bool? ?? false,
-      defaultShippingStreet: map['default_shipping_street'] as String?,
-      defaultShippingNumber: map['default_shipping_number'] as String?,
-      defaultShippingComplement: map['default_shipping_complement'] as String?,
-      defaultShippingNeighborhood:
-          map['default_shipping_neighborhood'] as String?,
-      defaultShippingCity: map['default_shipping_city'] as String?,
-      defaultShippingState: map['default_shipping_state'] as String?,
-      defaultShippingZipCode: map['default_shipping_zip_code'] as String?,
       emailVerified: map['email_verified'] as bool? ?? false,
       phoneVerified: map['phone_verified'] as bool? ?? false,
       isPhoneWhatsApp: map['is_phone_whatsapp'] as bool? ?? false,
@@ -81,15 +58,6 @@ class UserModel extends User {
       'creation_time': createdAt.toIso8601String(),
       if (lastSignInTime != null)
         'last_sign_in_time': lastSignInTime!.toIso8601String(),
-      'seller_rating': sellerRating,
-      'is_seller': isSeller,
-      'default_shipping_street': defaultShippingStreet,
-      'default_shipping_number': defaultShippingNumber,
-      'default_shipping_complement': defaultShippingComplement,
-      'default_shipping_neighborhood': defaultShippingNeighborhood,
-      'default_shipping_city': defaultShippingCity,
-      'default_shipping_state': defaultShippingState,
-      'default_shipping_zip_code': defaultShippingZipCode,
       'email_verified': emailVerified,
       'phone_verified': phoneVerified,
       'is_phone_whatsapp': isPhoneWhatsApp,
@@ -143,18 +111,6 @@ class UserModel extends User {
       lastSignInTime: json['lastSignInTime'] != null
           ? DateTime.parse(json['lastSignInTime'] as String)
           : null,
-      sellerRating: json['sellerRating'] != null
-          ? json['sellerRating'] as double
-          : 0.0,
-      isSeller: json['isSeller'] as bool? ?? false,
-      defaultShippingStreet: json['defaultShippingStreet'] as String?,
-      defaultShippingNumber: json['defaultShippingNumber'] as String?,
-      defaultShippingComplement: json['defaultShippingComplement'] as String?,
-      defaultShippingNeighborhood:
-          json['defaultShippingNeighborhood'] as String?,
-      defaultShippingCity: json['defaultShippingCity'] as String?,
-      defaultShippingState: json['defaultShippingState'] as String?,
-      defaultShippingZipCode: json['defaultShippingZipCode'] as String?,
       emailVerified: json['emailVerified'] as bool? ?? false,
       phoneVerified: json['phoneVerified'] as bool? ?? false,
       isPhoneWhatsApp: json['isPhoneWhatsApp'] as bool? ?? false,
@@ -174,15 +130,6 @@ class UserModel extends User {
       'createdAt': createdAt.toIso8601String(),
       if (lastSignInTime != null)
         'lastSignInTime': lastSignInTime!.toIso8601String(),
-      'sellerRating': sellerRating,
-      'isSeller': isSeller,
-      'defaultShippingStreet': defaultShippingStreet,
-      'defaultShippingNumber': defaultShippingNumber,
-      'defaultShippingComplement': defaultShippingComplement,
-      'defaultShippingNeighborhood': defaultShippingNeighborhood,
-      'defaultShippingCity': defaultShippingCity,
-      'defaultShippingState': defaultShippingState,
-      'defaultShippingZipCode': defaultShippingZipCode,
       'emailVerified': emailVerified,
       'phoneVerified': phoneVerified,
       'isPhoneWhatsApp': isPhoneWhatsApp,
@@ -205,15 +152,6 @@ class UserModel extends User {
       cpf: user.cpf,
       createdAt: user.createdAt,
       lastSignInTime: user.lastSignInTime,
-      sellerRating: user.sellerRating,
-      isSeller: user.isSeller,
-      defaultShippingStreet: user.defaultShippingStreet,
-      defaultShippingNumber: user.defaultShippingNumber,
-      defaultShippingComplement: user.defaultShippingComplement,
-      defaultShippingNeighborhood: user.defaultShippingNeighborhood,
-      defaultShippingCity: user.defaultShippingCity,
-      defaultShippingState: user.defaultShippingState,
-      defaultShippingZipCode: user.defaultShippingZipCode,
       emailVerified: user.emailVerified,
       phoneVerified: user.phoneVerified,
       isPhoneWhatsApp: user.isPhoneWhatsApp,
