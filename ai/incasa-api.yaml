@@ -1,0 +1,1497 @@
+openapi: 3.0.3
+
+info:
+  title: Incasa — Supabase API
+  version: "1.0.0"
+  description: |
+    API completa do backend Supabase (self-hosted em 91.98.84.101).
+    
+    ## Autenticação
+    Todos os endpoints REST exigem dois headers:
+    - `apikey`: anon key do Supabase
+    - `Authorization: Bearer <firebase_id_token>`: token obtido via Firebase Auth
+    
+    A Edge Function `auth-firebase` **não** exige header de autenticação —
+    ela usa service_role internamente.
+    
+    ## Base URLs
+    - REST:           http://91.98.84.101:8000/rest/v1
+    - Edge Functions: http://91.98.84.101:8000/functions/v1
+    
+    ## Estado atual das policies
+    As três policies "Allow all operations" (users, address, products) estão
+    ativas durante a transição. Após a migration 006 ser aplicada, o token
+    Firebase será substituído por um JWT do Supabase emitido pela Edge Function.
+
+servers:
+  - url: http://91.98.84.101:8000
+    description: VPS self-hosted (produção/dev)
+
+# ---------------------------------------------------------------------------
+# Segurança
+# ---------------------------------------------------------------------------
+components:
+  securitySchemes:
+    firebaseToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: ID Token obtido via Firebase Auth (Google Sign-In etc.)
+    anonKey:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Supabase anon key
+
+  # -------------------------------------------------------------------------
+  # Schemas reutilizáveis
+  # -------------------------------------------------------------------------
+  schemas:
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        full_name:
+          type: string
+          example: "João Silva"
+        display_name:
+          type: string
+          nullable: true
+          example: "João"
+        photo_url:
+          type: string
+          nullable: true
+          example: "https://lh3.googleusercontent.com/..."
+        seller_rating:
+          type: string
+          example: "0.00"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        cpf_hmac:
+          type: string
+          nullable: true
+          description: "HMAC-SHA256 do CPF (nunca expor no app)"
+        cpf_encrypted:
+          type: string
+          nullable: true
+          description: "CPF criptografado em base64 (nunca expor no app)"
+
+    UserUpdate:
+      type: object
+      properties:
+        display_name:
+          type: string
+          example: "João"
+        photo_url:
+          type: string
+          example: "https://..."
+
+    Phone:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        country_code:
+          type: string
+          example: "55"
+        area_code:
+          type: string
+          nullable: true
+          example: "11"
+        number:
+          type: string
+          example: "999998888"
+        full_number:
+          type: string
+          description: "Coluna GENERATED — nunca enviar em writes"
+          example: "5511999998888"
+        is_primary:
+          type: boolean
+          example: true
+        is_verified:
+          type: boolean
+          example: false
+        is_active:
+          type: boolean
+          example: true
+        has_whatsapp:
+          type: boolean
+          example: true
+          description: "Só pode ser true quando is_primary = true"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    PhoneInsert:
+      type: object
+      required:
+        - user_id
+        - country_code
+        - number
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        country_code:
+          type: string
+          example: "55"
+        area_code:
+          type: string
+          nullable: true
+          example: "11"
+        number:
+          type: string
+          example: "999998888"
+        is_primary:
+          type: boolean
+          example: true
+        has_whatsapp:
+          type: boolean
+          example: true
+          description: "Só válido se is_primary = true"
+
+    PhoneUpdate:
+      type: object
+      properties:
+        has_whatsapp:
+          type: boolean
+          example: false
+        is_primary:
+          type: boolean
+          example: true
+        is_active:
+          type: boolean
+          example: true
+
+    AddressType:
+      type: string
+      enum:
+        - home
+        - work
+        - billing
+        - shipping
+        - other
+
+    Address:
+      type: object
+      properties:
+        address_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        is_primary:
+          type: boolean
+          example: true
+        street:
+          type: string
+          example: "Rua das Flores"
+        number:
+          type: string
+          nullable: true
+          example: "123"
+        complement:
+          type: string
+          nullable: true
+          example: "Apto 4"
+        neighborhood:
+          type: string
+          nullable: true
+          example: "Centro"
+        city:
+          type: string
+          example: "São Paulo"
+        state:
+          type: string
+          example: "SP"
+        zip_code:
+          type: string
+          nullable: true
+          example: "01310-100"
+        address_type:
+          $ref: '#/components/schemas/AddressType'
+        label:
+          type: string
+          nullable: true
+          example: "Casa"
+        latitude:
+          type: number
+          format: double
+          nullable: true
+          example: -23.5505
+        longitude:
+          type: number
+          format: double
+          nullable: true
+          example: -46.6333
+        country_code:
+          type: string
+          nullable: true
+          maxLength: 2
+          example: "BR"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AddressInsert:
+      type: object
+      required:
+        - user_id
+        - street
+        - city
+        - state
+        - address_type
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        is_primary:
+          type: boolean
+          example: true
+        street:
+          type: string
+          example: "Rua das Flores"
+        number:
+          type: string
+          example: "123"
+        complement:
+          type: string
+          example: "Apto 4"
+        neighborhood:
+          type: string
+          example: "Centro"
+        city:
+          type: string
+          example: "São Paulo"
+        state:
+          type: string
+          example: "SP"
+        zip_code:
+          type: string
+          example: "01310-100"
+        address_type:
+          $ref: '#/components/schemas/AddressType'
+        label:
+          type: string
+          example: "Casa"
+        latitude:
+          type: number
+          format: double
+          example: -23.5505
+        longitude:
+          type: number
+          format: double
+          example: -46.6333
+        country_code:
+          type: string
+          maxLength: 2
+          example: "BR"
+
+    AddressUpdate:
+      type: object
+      properties:
+        is_primary:
+          type: boolean
+        street:
+          type: string
+        number:
+          type: string
+        complement:
+          type: string
+        neighborhood:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip_code:
+          type: string
+        address_type:
+          $ref: '#/components/schemas/AddressType'
+        label:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        country_code:
+          type: string
+          maxLength: 2
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        tipo:
+          type: string
+          enum: [produto, servico]
+        name:
+          type: string
+          example: "Vela artesanal"
+        description:
+          type: string
+          example: "Vela de soja com aroma de lavanda"
+        price:
+          type: string
+          example: "35.00"
+        image_url:
+          type: string
+          nullable: true
+        category:
+          type: string
+          example: "artesanato"
+        estoque:
+          type: integer
+          nullable: true
+          minimum: 0
+        prazo_producao_dias:
+          type: integer
+          nullable: true
+          minimum: 0
+        prazo_entrega_horas:
+          type: integer
+          nullable: true
+          minimum: 0
+        prazo_minimo_encomenda_dias:
+          type: integer
+          nullable: true
+          minimum: 0
+        disponivel_venda:
+          type: boolean
+          example: true
+        pronta_entrega:
+          type: boolean
+          example: true
+        aceita_encomenda:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProductInsert:
+      type: object
+      required:
+        - owner_id
+        - tipo
+        - name
+        - description
+        - price
+        - category
+      properties:
+        owner_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        tipo:
+          type: string
+          enum: [produto, servico]
+          example: "produto"
+        name:
+          type: string
+          example: "Vela artesanal"
+        description:
+          type: string
+          example: "Vela de soja com aroma de lavanda"
+        price:
+          type: number
+          format: float
+          minimum: 0
+          example: 35.00
+        category:
+          type: string
+          example: "artesanato"
+        image_url:
+          type: string
+          example: "https://..."
+        estoque:
+          type: integer
+          minimum: 0
+          example: 10
+        prazo_producao_dias:
+          type: integer
+          minimum: 0
+          example: 2
+        prazo_entrega_horas:
+          type: integer
+          minimum: 0
+          example: 48
+        prazo_minimo_encomenda_dias:
+          type: integer
+          minimum: 0
+          nullable: true
+        disponivel_venda:
+          type: boolean
+          example: true
+        pronta_entrega:
+          type: boolean
+          example: true
+        aceita_encomenda:
+          type: boolean
+          example: false
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+          minimum: 0
+        image_url:
+          type: string
+          nullable: true
+        category:
+          type: string
+        estoque:
+          type: integer
+          minimum: 0
+        prazo_producao_dias:
+          type: integer
+          minimum: 0
+        prazo_entrega_horas:
+          type: integer
+          minimum: 0
+        prazo_minimo_encomenda_dias:
+          type: integer
+          minimum: 0
+        disponivel_venda:
+          type: boolean
+        pronta_entrega:
+          type: boolean
+        aceita_encomenda:
+          type: boolean
+
+    Provider:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          example: "google"
+        provider_uid:
+          type: string
+          description: "UID do Firebase (string, não UUID)"
+          example: "abc123XYZ"
+        email:
+          type: string
+          nullable: true
+          example: "usuario@gmail.com"
+        is_primary:
+          type: boolean
+          example: true
+        is_verified:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        last_login_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ErrorPostgrest:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "P0001"
+        message:
+          type: string
+          example: "Mensagem de erro do banco"
+        details:
+          type: string
+          nullable: true
+        hint:
+          type: string
+          nullable: true
+
+# ---------------------------------------------------------------------------
+# Segurança global (REST)
+# ---------------------------------------------------------------------------
+security:
+  - firebaseToken: []
+    anonKey: []
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+
+  # ==========================================================================
+  # EDGE FUNCTION — auth-firebase
+  # ==========================================================================
+  /functions/v1/auth-firebase:
+    post:
+      tags:
+        - "01 · Autenticação"
+      summary: Login / registro via Firebase
+      description: |
+        Primeiro passo do fluxo de autenticação. Valida o ID token do Firebase,
+        cria ou atualiza o usuário no banco via `upsert_user_with_provider` e
+        retorna o `user_id` interno (UUID do banco).
+        
+        **Não requer header de autenticação** — a Edge Function usa service_role
+        internamente.
+        
+        Casos internos:
+        - **Caso A**: provider já existe → atualiza `last_login_at`
+        - **Caso B**: provider novo + CPF já cadastrado → vincula ao user existente  
+        - **Caso C**: tudo novo → cria `users` + `providers`
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_token
+              properties:
+                id_token:
+                  type: string
+                  description: "ID Token obtido via Firebase Auth (GoogleSignIn etc.)"
+                  example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+            examples:
+              login_google:
+                summary: Login com Google
+                value:
+                  id_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        "200":
+          description: Sucesso — usuário autenticado/criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user_id:
+                    type: string
+                    format: uuid
+                    description: "UUID interno do banco — armazenar localmente no Flutter"
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  is_new_user:
+                    type: boolean
+                    description: "true = primeiro login (redirecionar para onboarding)"
+                    example: true
+                  is_new_provider:
+                    type: boolean
+                    example: true
+                  firebase_uid:
+                    type: string
+                    example: "abc123XYZ"
+                  email:
+                    type: string
+                    example: "usuario@gmail.com"
+                  display_name:
+                    type: string
+                    example: "João Silva"
+                  photo_url:
+                    type: string
+                    example: "https://lh3.googleusercontent.com/..."
+                  provider:
+                    type: string
+                    example: "google"
+              examples:
+                novo_usuario:
+                  summary: Primeiro login (novo usuário)
+                  value:
+                    success: true
+                    user_id: "550e8400-e29b-41d4-a716-446655440000"
+                    is_new_user: true
+                    is_new_provider: true
+                    firebase_uid: "abc123XYZ"
+                    email: "usuario@gmail.com"
+                    display_name: "João Silva"
+                    photo_url: "https://lh3.googleusercontent.com/..."
+                    provider: "google"
+                login_recorrente:
+                  summary: Login recorrente (usuário existente)
+                  value:
+                    success: true
+                    user_id: "550e8400-e29b-41d4-a716-446655440000"
+                    is_new_user: false
+                    is_new_provider: false
+                    firebase_uid: "abc123XYZ"
+                    email: "usuario@gmail.com"
+                    display_name: "João Silva"
+                    photo_url: "https://lh3.googleusercontent.com/..."
+                    provider: "google"
+        "400":
+          description: Token Firebase inválido ou expirado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Token Firebase inválido ou expirado"
+        "500":
+          description: Erro interno (banco indisponível, app.pii_key ausente etc.)
+
+  # ==========================================================================
+  # RPC — set_user_cpf
+  # ==========================================================================
+  /rest/v1/rpc/set_user_cpf:
+    post:
+      tags:
+        - "02 · Onboarding"
+      summary: Salvar CPF do usuário (etapa 3)
+      description: |
+        Terceira e última etapa do onboarding. Grava o CPF do usuário autenticado.
+        
+        O banco identifica o usuário pelo token (`app_user_id()`) —
+        **não é necessário e nem possível** passar `user_id` no body.
+        
+        O CPF nunca é armazenado em texto puro:
+        - `cpf_hmac`: HMAC-SHA256 para busca/unicidade
+        - `cpf_encrypted`: pgp_sym_encrypt em base64 para recuperação futura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - p_cpf
+              properties:
+                p_cpf:
+                  type: string
+                  pattern: '^\d{11}$'
+                  description: "CPF sem pontos ou traços — exatamente 11 dígitos numéricos"
+                  example: "12345678901"
+            examples:
+              cpf_valido:
+                summary: CPF válido
+                value:
+                  p_cpf: "12345678901"
+      responses:
+        "200":
+          description: CPF salvo com sucesso (retorna null — função void)
+          content:
+            application/json:
+              schema:
+                nullable: true
+                example: null
+        "400":
+          description: Erro de validação ou CPF duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPostgrest'
+              examples:
+                formato_invalido:
+                  summary: Formato inválido
+                  value:
+                    code: "P0001"
+                    message: "CPF inválido: deve conter exatamente 11 dígitos numéricos."
+                    hint: null
+                cpf_duplicado:
+                  summary: CPF já cadastrado em outra conta
+                  value:
+                    code: "P0001"
+                    message: "Este CPF já está cadastrado em outra conta."
+                    hint: null
+                pii_key_ausente:
+                  summary: Chave PII não configurada no banco
+                  value:
+                    code: "P0001"
+                    message: "Chave de PII (app.pii_key) não configurada no banco."
+                    hint: null
+
+  # ==========================================================================
+  # USERS
+  # ==========================================================================
+  /rest/v1/users:
+    get:
+      tags:
+        - "03 · Usuário"
+      summary: Buscar perfil do usuário autenticado
+      description: |
+        Retorna os dados do próprio usuário. A policy `users: select own`
+        garante que apenas o registro do usuário autenticado é retornado.
+        
+        **Dica**: use `?select=id,full_name,display_name,photo_url,seller_rating`
+        para omitir `cpf_hmac` e `cpf_encrypted` (não expor no app).
+      parameters:
+        - name: select
+          in: query
+          description: "Campos a retornar (PostgREST column selector)"
+          schema:
+            type: string
+            example: "id,full_name,display_name,photo_url,seller_rating,created_at"
+      responses:
+        "200":
+          description: Perfil do usuário
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+              examples:
+                perfil_sem_cpf:
+                  summary: Usuário sem CPF cadastrado ainda
+                  value:
+                    - id: "550e8400-e29b-41d4-a716-446655440000"
+                      full_name: "João Silva"
+                      display_name: "João"
+                      photo_url: "https://lh3.googleusercontent.com/..."
+                      seller_rating: "0.00"
+                      created_at: "2026-06-28T10:00:00Z"
+                      updated_at: "2026-06-28T10:00:00Z"
+                      cpf_hmac: null
+                      cpf_encrypted: null
+                perfil_com_cpf:
+                  summary: Usuário com CPF cadastrado
+                  value:
+                    - id: "550e8400-e29b-41d4-a716-446655440000"
+                      full_name: "João Silva"
+                      display_name: "João"
+                      photo_url: "https://lh3.googleusercontent.com/..."
+                      seller_rating: "4.50"
+                      created_at: "2026-06-28T10:00:00Z"
+                      updated_at: "2026-06-28T12:00:00Z"
+                      cpf_hmac: "a3f8b2..."
+                      cpf_encrypted: "base64encodedstring..."
+
+    patch:
+      tags:
+        - "03 · Usuário"
+      summary: Atualizar perfil
+      description: |
+        Atualiza campos do próprio usuário. A policy `users: update own`
+        impede alterar dados de outro usuário.
+        
+        **Não use para CPF** — use o RPC `set_user_cpf`.
+        O campo `updated_at` é atualizado automaticamente pelo trigger.
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: "Filtro obrigatório — sempre filtrar pelo próprio UUID"
+          schema:
+            type: string
+            example: "id=eq.550e8400-e29b-41d4-a716-446655440000"
+        - name: Prefer
+          in: header
+          description: "Use 'return=representation' para receber o registro atualizado"
+          schema:
+            type: string
+            example: "return=representation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+            examples:
+              atualizar_display:
+                summary: Atualizar nome de exibição
+                value:
+                  display_name: "João"
+                  photo_url: "https://nova-foto.com/..."
+      responses:
+        "200":
+          description: Registro atualizado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  # ==========================================================================
+  # PHONES
+  # ==========================================================================
+  /rest/v1/phones:
+    get:
+      tags:
+        - "04 · Telefones"
+      summary: Listar telefones do usuário
+      description: |
+        Retorna todos os telefones do usuário autenticado.
+        RLS garante isolamento total entre usuários.
+        
+        `full_number` é coluna GENERATED (`country_code + area_code + number`).
+      parameters:
+        - name: select
+          in: query
+          schema:
+            type: string
+            example: "*"
+        - name: is_active
+          in: query
+          description: "Filtrar apenas ativos"
+          schema:
+            type: string
+            example: "eq.true"
+        - name: order
+          in: query
+          schema:
+            type: string
+            example: "created_at.desc"
+      responses:
+        "200":
+          description: Lista de telefones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Phone'
+              examples:
+                lista:
+                  value:
+                    - id: "uuid-phone-1"
+                      user_id: "550e8400-e29b-41d4-a716-446655440000"
+                      country_code: "55"
+                      area_code: "11"
+                      number: "999998888"
+                      full_number: "5511999998888"
+                      is_primary: true
+                      is_verified: false
+                      is_active: true
+                      has_whatsapp: true
+                      created_at: "2026-06-28T10:00:00Z"
+                      updated_at: "2026-06-28T10:00:00Z"
+
+    post:
+      tags:
+        - "04 · Telefones"
+      summary: Adicionar telefone
+      description: |
+        Cadastra um novo número de telefone para o usuário.
+        
+        **Regras do banco (enforçadas por constraint/índice):**
+        - `has_whatsapp: true` só é aceito quando `is_primary: true`
+        - Apenas um telefone pode ter `is_primary = true` e `is_active = true` por vez
+        - O índice parcial `idx_phones_one_primary` rejeita duplicidade de principal ativo
+        
+        **Não enviar** o campo `full_number` — é GENERATED.
+      parameters:
+        - name: Prefer
+          in: header
+          schema:
+            type: string
+            example: "return=representation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneInsert'
+            examples:
+              celular_whatsapp:
+                summary: Celular principal com WhatsApp
+                value:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  country_code: "55"
+                  area_code: "11"
+                  number: "999998888"
+                  is_primary: true
+                  has_whatsapp: true
+              celular_secundario:
+                summary: Celular secundário sem WhatsApp
+                value:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  country_code: "55"
+                  area_code: "21"
+                  number: "988887777"
+                  is_primary: false
+                  has_whatsapp: false
+      responses:
+        "201":
+          description: Telefone criado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Phone'
+        "400":
+          description: Violação de constraint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPostgrest'
+              examples:
+                whatsapp_sem_primary:
+                  summary: has_whatsapp=true com is_primary=false
+                  value:
+                    code: "23514"
+                    message: "new row violates check constraint \"phones_whatsapp_requires_primary\""
+
+  /rest/v1/phones{filter}:
+    patch:
+      tags:
+        - "04 · Telefones"
+      summary: Atualizar telefone
+      description: |
+        Atualiza campos de um telefone existente.
+        Use o query param `?id=eq.{phone_id}` para filtrar.
+      parameters:
+        - name: filter
+          in: path
+          required: true
+          description: "Ex: ?id=eq.{uuid}"
+          schema:
+            type: string
+            example: "?id=eq.uuid-phone-1"
+        - name: Prefer
+          in: header
+          schema:
+            type: string
+            example: "return=representation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneUpdate'
+            examples:
+              remover_whatsapp:
+                summary: Remover flag WhatsApp
+                value:
+                  has_whatsapp: false
+      responses:
+        "200":
+          description: Telefone atualizado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Phone'
+
+    delete:
+      tags:
+        - "04 · Telefones"
+      summary: Remover telefone
+      description: |
+        Remove um telefone. Use `?id=eq.{phone_id}`.
+        RLS impede deletar telefone de outro usuário.
+      parameters:
+        - name: filter
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "?id=eq.uuid-phone-1"
+      responses:
+        "204":
+          description: Telefone removido
+
+  # ==========================================================================
+  # ADDRESS
+  # ==========================================================================
+  /rest/v1/address:
+    get:
+      tags:
+        - "05 · Endereços"
+      summary: Listar endereços do usuário
+      description: |
+        Retorna todos os endereços do usuário autenticado.
+        `address_type` é enum: `home`, `work`, `billing`, `shipping`, `other`.
+      parameters:
+        - name: select
+          in: query
+          schema:
+            type: string
+            example: "*"
+        - name: is_primary
+          in: query
+          description: "Filtrar apenas o principal"
+          schema:
+            type: string
+            example: "eq.true"
+        - name: order
+          in: query
+          schema:
+            type: string
+            example: "created_at.desc"
+      responses:
+        "200":
+          description: Lista de endereços
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+              examples:
+                lista:
+                  value:
+                    - address_id: "uuid-addr-1"
+                      user_id: "550e8400-e29b-41d4-a716-446655440000"
+                      is_primary: true
+                      street: "Rua das Flores"
+                      number: "123"
+                      complement: "Apto 4"
+                      neighborhood: "Centro"
+                      city: "São Paulo"
+                      state: "SP"
+                      zip_code: "01310-100"
+                      address_type: "home"
+                      label: "Casa"
+                      latitude: -23.5505
+                      longitude: -46.6333
+                      country_code: "BR"
+                      created_at: "2026-06-28T10:00:00Z"
+                      updated_at: "2026-06-28T10:00:00Z"
+
+    post:
+      tags:
+        - "05 · Endereços"
+      summary: Adicionar endereço
+      description: |
+        Cadastra novo endereço para o usuário.
+        
+        Se `is_primary: true`, o trigger `trigger_handle_primary_address` rebaixa
+        automaticamente os outros endereços do usuário — sem necessidade de
+        atualizar manualmente.
+        
+        `country_code` aceita 1 ou 2 caracteres (CHECK constraint).
+      parameters:
+        - name: Prefer
+          in: header
+          schema:
+            type: string
+            example: "return=representation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressInsert'
+            examples:
+              endereco_residencial:
+                summary: Endereço residencial principal
+                value:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  is_primary: true
+                  street: "Rua das Flores"
+                  number: "123"
+                  complement: "Apto 4"
+                  neighborhood: "Centro"
+                  city: "São Paulo"
+                  state: "SP"
+                  zip_code: "01310-100"
+                  address_type: "home"
+                  label: "Casa"
+                  latitude: -23.5505
+                  longitude: -46.6333
+                  country_code: "BR"
+      responses:
+        "201":
+          description: Endereço criado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+        "400":
+          description: Violação de constraint ou enum inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPostgrest'
+
+  /rest/v1/address{filter}:
+    patch:
+      tags:
+        - "05 · Endereços"
+      summary: Atualizar endereço
+      description: Use `?address_id=eq.{uuid}` para filtrar.
+      parameters:
+        - name: filter
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "?address_id=eq.uuid-addr-1"
+        - name: Prefer
+          in: header
+          schema:
+            type: string
+            example: "return=representation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressUpdate'
+            examples:
+              atualizar_rua:
+                summary: Atualizar rua e número
+                value:
+                  street: "Av. Paulista"
+                  number: "1000"
+      responses:
+        "200":
+          description: Endereço atualizado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+
+    delete:
+      tags:
+        - "05 · Endereços"
+      summary: Remover endereço
+      description: Use `?address_id=eq.{uuid}`.
+      parameters:
+        - name: filter
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "?address_id=eq.uuid-addr-1"
+      responses:
+        "204":
+          description: Endereço removido
+
+  # ==========================================================================
+  # PRODUCTS
+  # ==========================================================================
+  /rest/v1/products:
+    get:
+      tags:
+        - "06 · Produtos"
+      summary: Listar produtos
+      description: |
+        Retorna produtos. Qualquer usuário autenticado pode ler todos os produtos
+        (policy `products: select all authenticated`).
+        
+        **Filtros úteis via query params:**
+        - `?disponivel_venda=eq.true` — apenas disponíveis
+        - `?category=eq.artesanato` — por categoria
+        - `?tipo=eq.produto` — apenas produtos (não serviços)
+        - `?owner_id=eq.{uuid}` — produtos de um vendedor específico
+        - `?order=created_at.desc` — mais recentes primeiro
+        - `?limit=20&offset=0` — paginação
+      parameters:
+        - name: select
+          in: query
+          schema:
+            type: string
+            example: "*"
+        - name: disponivel_venda
+          in: query
+          schema:
+            type: string
+            example: "eq.true"
+        - name: category
+          in: query
+          schema:
+            type: string
+            example: "eq.artesanato"
+        - name: tipo
+          in: query
+          schema:
+            type: string
+            example: "eq.produto"
+        - name: owner_id
+          in: query
+          description: "Filtrar produtos de um vendedor"
+          schema:
+            type: string
+            example: "eq.550e8400-e29b-41d4-a716-446655440000"
+        - name: order
+          in: query
+          schema:
+            type: string
+            example: "created_at.desc"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            example: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            example: 0
+      responses:
+        "200":
+          description: Lista de produtos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+              examples:
+                lista:
+                  value:
+                    - id: "uuid-product-1"
+                      owner_id: "550e8400-e29b-41d4-a716-446655440000"
+                      tipo: "produto"
+                      name: "Vela artesanal"
+                      description: "Vela de soja com aroma de lavanda"
+                      price: "35.00"
+                      image_url: "https://..."
+                      category: "artesanato"
+                      estoque: 10
+                      prazo_producao_dias: 2
+                      prazo_entrega_horas: 48
+                      prazo_minimo_encomenda_dias: null
+                      disponivel_venda: true
+                      pronta_entrega: true
+                      aceita_encomenda: false
+                      created_at: "2026-06-28T10:00:00Z"
+                      updated_at: "2026-06-28T10:00:00Z"
+
+    post:
+      tags:
+        - "06 · Produtos"
+      summary: Criar produto
+      description: |
+        Cria um novo produto. A policy `products: insert own` valida que
+        `owner_id` corresponde ao usuário autenticado.
+        
+        **Constraints do banco:**
+        - `tipo`: apenas `"produto"` ou `"servico"`
+        - `price`, `estoque`, todos os prazos: devem ser >= 0
+      parameters:
+        - name: Prefer
+          in: header
+          schema:
+            type: string
+            example: "return=representation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInsert'
+            examples:
+              produto_fisico:
+                summary: Produto físico com estoque
+                value:
+                  owner_id: "550e8400-e29b-41d4-a716-446655440000"
+                  tipo: "produto"
+                  name: "Vela artesanal"
+                  description: "Vela de soja com aroma de lavanda"
+                  price: 35.00
+                  category: "artesanato"
+                  image_url: "https://..."
+                  estoque: 10
+                  prazo_producao_dias: 2
+                  prazo_entrega_horas: 48
+                  disponivel_venda: true
+                  pronta_entrega: true
+                  aceita_encomenda: false
+              servico:
+                summary: Serviço sob encomenda
+                value:
+                  owner_id: "550e8400-e29b-41d4-a716-446655440000"
+                  tipo: "servico"
+                  name: "Conserto de roupas"
+                  description: "Ajuste e conserto de peças diversas"
+                  price: 50.00
+                  category: "servicos"
+                  disponivel_venda: true
+                  pronta_entrega: false
+                  aceita_encomenda: true
+                  prazo_minimo_encomenda_dias: 3
+      responses:
+        "201":
+          description: Produto criado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        "400":
+          description: Violação de constraint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPostgrest'
+              examples:
+                tipo_invalido:
+                  value:
+                    code: "23514"
+                    message: "new row violates check constraint \"products_tipo_check\""
+                price_negativo:
+                  value:
+                    code: "23514"
+                    message: "new row violates check constraint \"products_price_check\""
+
+  /rest/v1/products{filter}:
+    patch:
+      tags:
+        - "06 · Produtos"
+      summary: Atualizar produto
+      description: |
+        Atualiza campos de um produto. Use `?id=eq.{product_id}`.
+        
+        A policy `products: update own` impede editar produtos de outros usuários
+        — a operação retorna 0 linhas afetadas silenciosamente (sem erro HTTP).
+      parameters:
+        - name: filter
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "?id=eq.uuid-product-1"
+        - name: Prefer
+          in: header
+          schema:
+            type: string
+            example: "return=representation"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+            examples:
+              pausar_venda:
+                summary: Pausar disponibilidade
+                value:
+                  disponivel_venda: false
+              atualizar_estoque:
+                summary: Atualizar estoque e preço
+                value:
+                  estoque: 5
+                  price: 39.90
+      responses:
+        "200":
+          description: Produto atualizado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+
+    delete:
+      tags:
+        - "06 · Produtos"
+      summary: Remover produto
+      description: |
+        Remove um produto. Use `?id=eq.{product_id}`.
+        RLS impede deletar produtos de outros usuários.
+      parameters:
+        - name: filter
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "?id=eq.uuid-product-1"
+      responses:
+        "204":
+          description: Produto removido
+
+  # ==========================================================================
+  # PROVIDERS
+  # ==========================================================================
+  /rest/v1/providers:
+    get:
+      tags:
+        - "07 · Providers"
+      summary: Listar provedores de auth vinculados
+      description: |
+        Retorna os provedores de autenticação vinculados ao usuário (Google, Apple etc.).
+        
+        **Somente leitura via REST.** Inserção/atualização é exclusiva da Edge Function
+        `auth-firebase` via service_role.
+        
+        Útil para a tela de configurações mostrar quais contas sociais estão vinculadas.
+      parameters:
+        - name: select
+          in: query
+          schema:
+            type: string
+            example: "id,provider,email,is_primary,last_login_at"
+            description: "Omita provider_uid se não for necessário no app"
+      responses:
+        "200":
+          description: Lista de providers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Provider'
+              examples:
+                google:
+                  value:
+                    - id: "uuid-provider-1"
+                      user_id: "550e8400-e29b-41d4-a716-446655440000"
+                      provider: "google"
+                      provider_uid: "abc123XYZ"
+                      email: "usuario@gmail.com"
+                      is_primary: true
+                      is_verified: true
+                      created_at: "2026-06-28T10:00:00Z"
+                      last_login_at: "2026-06-28T10:00:00Z"
+
+# ---------------------------------------------------------------------------
+# Tags com descrições
+# ---------------------------------------------------------------------------
+tags:
+  - name: "01 · Autenticação"
+    description: "Edge Function — login e registro via Firebase Auth"
+  - name: "02 · Onboarding"
+    description: "RPCs para completar o cadastro (etapa 3: CPF)"
+  - name: "03 · Usuário"
+    description: "CRUD do perfil do usuário autenticado"
+  - name: "04 · Telefones"
+    description: "CRUD de telefones — múltiplos por usuário, 1 principal"
+  - name: "05 · Endereços"
+    description: "CRUD de endereços — múltiplos por usuário, 1 principal"
+  - name: "06 · Produtos"
+    description: "Marketplace — leitura pública, escrita apenas do dono"
+  - name: "07 · Providers"
+    description: "Provedores de auth vinculados — somente leitura via REST"

@@ -12,31 +12,9 @@ class AddProductView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<MyStoreCubit, MyStoreState>(
-      bloc: sl<MyStoreCubit>(),
-      listener: (context, state) {
-        // Feedback de sucesso/erro após adicionar produto
-        if (!state.isAddingProduct && state.products != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Produto adicionado com sucesso!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.of(context).pop();
-        } else if (!state.isAddingProduct && state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erro: ${state.errorMessage}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Adicionar Produto')),
-        body: const _AddProductForm(),
-      ),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Adicionar Produto')),
+      body: const _AddProductForm(),
     );
   }
 }
@@ -109,8 +87,29 @@ class _AddProductFormState extends State<_AddProductForm> {
       createdAt: DateTime.now(),
     );
 
-    // Cubit gerencia o estado de loading
-    await sl<MyStoreCubit>().addProduct(product);
+    // Cubit gerencia o estado de loading; o retorno só chega depois da
+    // confirmação (sucesso ou erro) da chamada ao Supabase.
+    final success = await sl<MyStoreCubit>().addProduct(product);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Produto salvo com sucesso!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.of(context).pop();
+    } else {
+      final errorMessage = sl<MyStoreCubit>().state.errorMessage;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro: $errorMessage'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override

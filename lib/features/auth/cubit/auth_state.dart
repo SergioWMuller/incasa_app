@@ -8,10 +8,15 @@ class AuthState extends Equatable {
   final User? user;
   final String? errorMessage;
 
+  /// Indica que o usuário autenticado ainda não concluiu o onboarding
+  /// (novo usuário ou sem CPF gravado). A UI usa isso para abrir o wizard.
+  final bool needsOnboarding;
+
   const AuthState({
     this.status = AuthStatus.initial,
     this.user,
     this.errorMessage,
+    this.needsOnboarding = false,
   });
 
   // Getters para facilitar verificações (seguindo padrão do projeto)
@@ -23,13 +28,19 @@ class AuthState extends Equatable {
   bool get hasError => status == AuthStatus.error;
 
   @override
-  List<Object?> get props => [status, user, errorMessage];
+  List<Object?> get props => [status, user, errorMessage, needsOnboarding];
 
-  AuthState copyWith({AuthStatus? status, User? user, String? errorMessage}) {
+  AuthState copyWith({
+    AuthStatus? status,
+    User? user,
+    String? errorMessage,
+    bool? needsOnboarding,
+  }) {
     return AuthState(
       status: status ?? this.status,
       user: user ?? this.user,
       errorMessage: errorMessage ?? this.errorMessage,
+      needsOnboarding: needsOnboarding ?? this.needsOnboarding,
     );
   }
 }

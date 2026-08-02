@@ -12,21 +12,26 @@ import 'package:incasa_app/features/auth/services/auth_service.dart';
 import 'package:incasa_app/features/auth/cubit/auth_cubit.dart';
 import 'package:incasa_app/data/datasources/local/marketplace_local_data_source.dart';
 import 'package:incasa_app/data/datasources/local/my_store_local_data_source.dart';
+import 'package:incasa_app/data/datasources/local/my_store_layout_local_data_source.dart';
 import 'package:incasa_app/data/datasources/local/profile_local_data_source.dart';
 import 'package:incasa_app/data/datasources/local/theme_local_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/marketplace_remote_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/my_store_remote_data_source.dart';
+import 'package:incasa_app/data/datasources/remote/my_store_layout_supabase_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/product_supabase_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/profile_remote_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/user_supabase_data_source.dart';
+import 'package:incasa_app/data/datasources/remote/phone_supabase_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/address_supabase_data_source.dart';
 import 'package:incasa_app/data/repositories/marketplace/marketplace_repository_impl.dart';
 import 'package:incasa_app/data/repositories/my_store/my_store_repository_impl.dart';
+import 'package:incasa_app/data/repositories/my_store/layout_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/profile_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/theme_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/address_repository_impl.dart';
 import 'package:incasa_app/domain/repositories/marketplace/marketplace_repository.dart';
 import 'package:incasa_app/domain/repositories/my_store/my_store_repository.dart';
+import 'package:incasa_app/domain/repositories/my_store/layout_repository.dart';
 import 'package:incasa_app/domain/repositories/profile/profile_repository.dart';
 import 'package:incasa_app/domain/repositories/profile/theme_repository.dart';
 import 'package:incasa_app/domain/repositories/profile/address_repository.dart';
@@ -36,6 +41,8 @@ import 'package:incasa_app/domain/usecases/marketplace/search_products.dart';
 import 'package:incasa_app/domain/usecases/my_store/add_product.dart';
 import 'package:incasa_app/domain/usecases/my_store/get_my_products.dart';
 import 'package:incasa_app/domain/usecases/my_store/get_my_store.dart';
+import 'package:incasa_app/domain/usecases/my_store/get_store_layout.dart';
+import 'package:incasa_app/domain/usecases/my_store/save_store_layout.dart';
 import 'package:incasa_app/domain/usecases/profile/get_theme_mode.dart';
 import 'package:incasa_app/domain/usecases/profile/get_theme_color.dart';
 import 'package:incasa_app/domain/usecases/profile/get_user_profile.dart';
@@ -43,8 +50,17 @@ import 'package:incasa_app/domain/usecases/profile/save_theme_mode.dart';
 import 'package:incasa_app/domain/usecases/profile/save_theme_color.dart';
 import 'package:incasa_app/features/marketplace/cubit/marketplace_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_cubit.dart';
+import 'package:incasa_app/features/my_store/cubit/editar_loja_cubit.dart';
 import 'package:incasa_app/features/profile/cubit/profile_cubit.dart';
 import 'package:incasa_app/features/address/cubit/address_cubit.dart';
+import 'package:incasa_app/core/shell/app_shell_cubit.dart';
+import 'package:incasa_app/data/datasources/local/design_mock_data_source.dart';
+import 'package:incasa_app/features/chat/cubit/chat_cubit.dart';
+import 'package:incasa_app/features/checkout/cubit/pix_cubit.dart';
+import 'package:incasa_app/features/home/cubit/home_cubit.dart';
+import 'package:incasa_app/features/product_detail/cubit/product_detail_cubit.dart';
+import 'package:incasa_app/features/sell/cubit/sell_cubit.dart';
+import 'package:incasa_app/features/seller_store/cubit/seller_store_cubit.dart';
 
 final sl = GetIt.instance; // sl = Service Locator
 
@@ -98,6 +114,12 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<MyStoreRemoteDataSource>(
     () => MyStoreRemoteDataSourceImpl(productDataSource: sl(), supabase: sl()),
   );
+  sl.registerLazySingleton<MyStoreLayoutLocalDataSource>(
+    () => MyStoreLayoutLocalDataSourceImpl(),
+  );
+  sl.registerLazySingleton<MyStoreLayoutSupabaseDataSource>(
+    () => MyStoreLayoutSupabaseDataSourceImpl(),
+  );
 
   // ============== Data Sources - Profile ==============
   sl.registerLazySingleton<ProfileLocalDataSource>(
@@ -134,6 +156,11 @@ Future<void> initializeDependencies() async {
     () => ProductSupabaseDataSourceImpl(supabase: sl()),
   );
 
+  // ============== Data Sources - Phone (Supabase) ==============
+  sl.registerLazySingleton<PhoneSupabaseDataSource>(
+    () => PhoneSupabaseDataSourceImpl(supabase: sl()),
+  );
+
   // ============== Data Sources - Address (Supabase) ==============
   sl.registerLazySingleton<AddressSupabaseDataSource>(
     () => AddressSupabaseDataSourceImpl(supabase: sl()),
@@ -149,7 +176,18 @@ Future<void> initializeDependencies() async {
 
   // ============== Repositories - MyStore ==============
   sl.registerLazySingleton<MyStoreRepository>(
-    () => MyStoreRepositoryImpl(remoteDataSource: sl(), localDataSource: sl()),
+    () => MyStoreRepositoryImpl(
+      remoteDataSource: sl(),
+      localDataSource: sl(),
+      authLocalDataSource: sl(),
+    ),
+  );
+  sl.registerLazySingleton<LayoutRepository>(
+    () => LayoutRepositoryImpl(
+      localDataSource: sl(),
+      remoteDataSource: sl(),
+      authLocalDataSource: sl(),
+    ),
   );
 
   // ============== Repositories - Profile ==============
@@ -175,6 +213,8 @@ Future<void> initializeDependencies() async {
   sl.registerFactory(() => GetMyStore(sl()));
   sl.registerFactory(() => GetMyProducts(sl()));
   sl.registerFactory(() => AddProduct(sl()));
+  sl.registerFactory(() => GetStoreLayout(sl()));
+  sl.registerFactory(() => SaveStoreLayout(sl()));
 
   // ============== Use Cases - Profile ==============
   sl.registerFactory(() => GetUserProfile(sl()));
@@ -234,6 +274,39 @@ Future<void> initializeDependencies() async {
   // ============== Cubits - Address ==============
   // Factory pois cada tela de endereço é independente (formulário ou lista)
   sl.registerFactory(() => AddressCubit(sl(), sl(), sl(), sl()));
+
+  // ============== Cubits - EditarLoja ==============
+  // Factory pois é uma tela empilhada (precedente: AddressCubit) — cada
+  // abertura da EditarLojaView começa com um estado limpo.
+  sl.registerFactory(
+    () => EditarLojaCubit(
+      getStoreLayoutUseCase: sl(),
+      saveStoreLayoutUseCase: sl(),
+      getMyProductsUseCase: sl(),
+    ),
+  );
+
+  // ============== Design Handoff (provisório, mock) ==============
+  // Telas do design_handoff_incasa. Na fase de mesclagem, o mock dará lugar
+  // aos usecases/repositories reais das features existentes.
+  sl.registerLazySingleton<DesignMockDataSource>(
+    () => DesignMockDataSourceImpl(),
+  );
+
+  // Cubit do shell (tab selecionada)
+  sl.registerLazySingleton(() => AppShellCubit());
+
+  // Cubits de tab — singletons como os demais cubits de tab
+  sl.registerLazySingleton(() => HomeCubit(mockDataSource: sl())..loadHome());
+  sl.registerLazySingleton(() => SellCubit(myStoreCubit: sl()));
+  sl.registerLazySingleton(
+    () => ChatCubit(mockDataSource: sl())..loadThreads(),
+  );
+
+  // Cubits de telas empilhadas — factory (precedente: AddressCubit)
+  sl.registerFactory(() => ProductDetailCubit(mockDataSource: sl()));
+  sl.registerFactory(() => SellerStoreCubit(mockDataSource: sl()));
+  sl.registerFactory(() => PixCubit(mockDataSource: sl()));
 
   // ============== Geolocator ==============
   sl.registerLazySingleton<GeolocatorPlatform>(

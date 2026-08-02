@@ -2,23 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:incasa_app/data/datasources/local/auth_local_data_source.dart';
+import 'package:incasa_app/data/datasources/remote/phone_supabase_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/user_supabase_data_source.dart';
-import 'package:incasa_app/data/models/profile/user_model.dart';
+import 'package:incasa_app/data/models/profile/phone_model.dart';
 import 'onboarding_state.dart';
 
+/// Cubit do onboarding (3 etapas obrigatórias):
+/// 1. **E-mail** — já persistido em `providers` no login (Edge Function); aqui é
+///    só verificação visual via Firebase.
+/// 2. **Telefone** — gravado na tabela `phones` (`PhoneSupabaseDataSource`).
+/// 3. **CPF** — gravado via RPC `set_user_cpf` (só `cpf_hmac`/`cpf_encrypted`).
 class OnboardingCubit extends Cubit<OnboardingState> {
   final UserSupabaseDataSource userSupabaseDataSource;
+  final PhoneSupabaseDataSource phoneDataSource;
   final AuthLocalDataSource authLocalDataSource;
   final User firebaseUser;
   final PageController pageController;
 
   OnboardingCubit({
     required this.userSupabaseDataSource,
+    required this.phoneDataSource,
     required this.authLocalDataSource,
     required this.firebaseUser,
-  }) : pageController = PageController(),
+  }) : pageController = PageController(
+         initialPage: firebaseUser.emailVerified
+             ? OnboardingStep.phoneVerification.index
+             : OnboardingStep.emailVerification.index,
+       ),
        super(
          OnboardingState(
+           currentStep: firebaseUser.emailVerified
+               ? OnboardingStep.phoneVerification
+               : OnboardingStep.emailVerification,
            email: firebaseUser.email,
            emailVerified: firebaseUser.emailVerified,
          ),
@@ -36,7 +51,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           state.copyWith(
             phoneNumber: userData['phoneNumber'] as String?,
             phoneVerified: userData['phoneVerified'] as bool? ?? false,
-            cpf: userData['cpf'] as String?,
+            phoneSaved: userData['phoneNumber'] != null,
+            // Não guardamos o CPF (PII) localmente — apenas a flag de concluído.
+            cpfSaved: userData['cpfSaved'] as bool? ?? false,
           ),
         );
       }
@@ -197,26 +214,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             await firebaseUser.linkWithCredential(credential);
             final updatedUser = FirebaseAuth.instance.currentUser!;
 
-            // Atualiza no Supabase primeiro
-            await _updatePhoneInSupabase(
+            await _persistPhone(
               updatedUser.phoneNumber!,
               verified: true,
-              isWhatsApp: state.isPhoneWhatsApp,
-            );
-
-            // Depois atualiza no SharedPreferences
-            await _updatePhoneInSharedPreferences(
-              updatedUser.phoneNumber!,
-              verified: true,
-              isWhatsApp: state.isPhoneWhatsApp,
-            );
-
-            emit(
-              state.copyWith(
-                isLoading: false,
-                phoneVerified: true,
-                phoneNumber: updatedUser.phoneNumber,
-              ),
             );
           } catch (e) {
             emit(
@@ -238,12 +238,12 @@ class OnboardingCubit extends Cubit<OnboardingState> {
             errorMsg = 'Cota de SMS excedida. Contate o suporte.';
           } else if (e.message?.contains('BILLING_NOT_ENABLED') == true) {
             errorMsg =
-                'Verificação por SMS indisponível. Você pode pular esta etapa.';
+                'Verificação por SMS indisponível no momento. Tente novamente mais tarde.';
           } else if (e.message?.contains('not allowed') == true) {
             errorMsg =
-                'Verificação por SMS não configurada. Você pode pular esta etapa.';
+                'Verificação por SMS não configurada. Tente outro método.';
           } else {
-            errorMsg = 'Erro ao enviar SMS. Você pode pular esta etapa.';
+            errorMsg = 'Erro ao enviar SMS. Tente novamente.';
           }
 
           emit(state.copyWith(isLoading: false, errorMessage: errorMsg));
@@ -299,27 +299,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       final userCredential = await firebaseUser.linkWithCredential(credential);
       final updatedUser = userCredential.user!;
 
-      // 1. Primeiro atualiza no Supabase (phone_verified = true)
-      await _updatePhoneInSupabase(
+      await _persistPhone(
         updatedUser.phoneNumber!,
         verified: true,
-        isWhatsApp: state.isPhoneWhatsApp,
-      );
-
-      // 2. Depois atualiza no SharedPreferences
-      await _updatePhoneInSharedPreferences(
-        updatedUser.phoneNumber!,
-        verified: true,
-        isWhatsApp: state.isPhoneWhatsApp,
-      );
-
-      emit(
-        state.copyWith(
-          isLoading: false,
-          phoneVerified: true,
-          phoneNumber: updatedUser.phoneNumber,
-          errorMessage: null,
-        ),
       );
     } on FirebaseAuthException catch (e) {
       String errorMsg = 'Código inválido';
@@ -350,35 +332,22 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     emit(state.copyWith(isPhoneWhatsApp: !state.isPhoneWhatsApp));
   }
 
+  /// Limpa o flag de telefone salvo após navegação
+  void clearPhoneSaved() {
+    emit(state.copyWith(phoneSaved: false));
+  }
+
+  /// Limpa o flag de CPF salvo após navegação
+  void clearCpfSaved() {
+    emit(state.copyWith(cpfSaved: false));
+  }
+
   /// Salva telefone sem verificação (modo padrão)
   Future<void> savePhoneWithoutVerification(String phoneNumber) async {
     try {
       emit(state.copyWith(isLoading: true, errorMessage: null));
 
-      final formattedPhone = '+55$phoneNumber';
-
-      // Salva no Supabase com phoneVerified = false
-      await _updatePhoneInSupabase(
-        formattedPhone,
-        verified: false,
-        isWhatsApp: state.isPhoneWhatsApp,
-      );
-
-      // Salva no SharedPreferences
-      await _updatePhoneInSharedPreferences(
-        formattedPhone,
-        verified: false,
-        isWhatsApp: state.isPhoneWhatsApp,
-      );
-
-      emit(
-        state.copyWith(
-          isLoading: false,
-          phoneNumber: formattedPhone,
-          phoneVerified: false,
-          errorMessage: null,
-        ),
-      );
+      await _persistPhone(phoneNumber, verified: false);
     } catch (e) {
       emit(
         state.copyWith(
@@ -389,96 +358,126 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
-  /// Atualiza dados do telefone no Supabase
-  Future<void> _updatePhoneInSupabase(
+  /// Fluxo único de persistência do telefone:
+  /// 1) grava em `phones` (fonte de verdade) -> 2) cache local -> 3) sucesso.
+  Future<void> _persistPhone(
     String phoneNumber, {
     required bool verified,
-    bool isWhatsApp = false,
   }) async {
-    final existingUser = await userSupabaseDataSource.getUserByUid(
-      firebaseUser.uid,
+    final userId = await _resolveSupabaseUserId();
+    final isWhatsApp = state.isPhoneWhatsApp;
+    final parts = _splitBrazilianPhone(phoneNumber);
+
+    // id/timestamps são ignorados por toInsert() (gerados pelo banco).
+    final phone = PhoneModel(
+      id: '',
+      userId: userId,
+      countryCode: parts.countryCode,
+      areaCode: parts.areaCode,
+      number: parts.number,
+      isPrimary: true,
+      hasWhatsapp: isWhatsApp,
+      isVerified: verified,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
 
-    if (existingUser != null) {
-      final updatedUser = UserModel(
-        uid: existingUser.uid,
-        email: existingUser.email,
-        fullName: existingUser.fullName,
-        displayName: existingUser.displayName,
-        photoUrl: existingUser.photoUrl,
-        phoneNumber: phoneNumber,
+    final saved = await phoneDataSource.createPhone(phone);
+
+    await _cachePhoneLocally(saved);
+
+    emit(
+      state.copyWith(
+        isLoading: false,
+        phoneNumber: saved.fullNumber ?? saved.number,
         phoneVerified: verified,
         isPhoneWhatsApp: isWhatsApp,
-        emailVerified: existingUser.emailVerified,
-        cpf: existingUser.cpf,
-        createdAt: existingUser.createdAt,
-        lastSignInTime: DateTime.now(),
+        phoneSaved: true,
+        errorMessage: null,
+      ),
+    );
+  }
+
+  /// Quebra um número brasileiro em `country_code` / `area_code` / `number`
+  /// para a tabela `phones`. Aceita entrada com ou sem DDI (`+55`).
+  ({String countryCode, String? areaCode, String number}) _splitBrazilianPhone(
+    String raw,
+  ) {
+    var digits = raw.replaceAll(RegExp(r'\D'), '');
+
+    // Remove o DDI 55 se vier incluso (ex.: +5511999998888).
+    if (digits.length > 11 && digits.startsWith('55')) {
+      digits = digits.substring(2);
+    }
+
+    // DDD (2) + número (8 ou 9 dígitos).
+    if (digits.length >= 10) {
+      return (
+        countryCode: '55',
+        areaCode: digits.substring(0, 2),
+        number: digits.substring(2),
       );
-
-      await userSupabaseDataSource.updateUser(firebaseUser.uid, updatedUser);
     }
+
+    return (countryCode: '55', areaCode: null, number: digits);
   }
 
-  /// Atualiza dados do telefone no SharedPreferences
-  Future<void> _updatePhoneInSharedPreferences(
-    String phoneNumber, {
-    required bool verified,
-    bool isWhatsApp = false,
-  }) async {
-    try {
-      final userData = await authLocalDataSource.getUserData();
-
-      if (userData != null) {
-        userData['phoneNumber'] = phoneNumber;
-        userData['phoneVerified'] = verified;
-        userData['isPhoneWhatsApp'] = isWhatsApp;
-
-        await authLocalDataSource.saveUserData(userData);
-      }
-    } catch (e) {
-      // Falha silenciosa - não bloqueia o fluxo
-    }
+  bool _isUuid(String value) {
+    final uuidRegex = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    );
+    return uuidRegex.hasMatch(value);
   }
 
-  /// Salva o CPF no Supabase
+  /// Resolve o UUID (PK) do usuário no Supabase sem fallback por email.
+  Future<String> _resolveSupabaseUserId() async {
+    final userData = await authLocalDataSource.getUserData();
+    final localId = userData?['id']?.toString();
+
+    if (localId != null && _isUuid(localId)) {
+      return localId;
+    }
+
+    if (_isUuid(firebaseUser.uid)) {
+      return firebaseUser.uid;
+    }
+
+    throw Exception(
+      'ID UUID do usuário não encontrado localmente. Faça login novamente para sincronizar o usuário com o Supabase.',
+    );
+  }
+
+  /// Guarda no cache local apenas o necessário para reidratar a UI do
+  /// onboarding (telefone formatado + flag WhatsApp). A fonte de verdade é a
+  /// tabela `phones`.
+  Future<void> _cachePhoneLocally(PhoneModel phone) async {
+    final userData =
+        await authLocalDataSource.getUserData() ?? <String, dynamic>{};
+
+    userData['phoneNumber'] = phone.fullNumber ?? phone.number;
+    userData['isPhoneWhatsApp'] = phone.hasWhatsapp;
+
+    await authLocalDataSource.saveUserData(userData);
+  }
+
+  /// Marca o CPF como concluído localmente — **sem** guardar o CPF (PII).
+  Future<void> _markCpfSavedLocally() async {
+    final userData =
+        await authLocalDataSource.getUserData() ?? <String, dynamic>{};
+    userData['cpfSaved'] = true;
+    await authLocalDataSource.saveUserData(userData);
+  }
+
+  /// Salva o CPF via RPC `set_user_cpf` (grava `cpf_hmac`/`cpf_encrypted`).
   Future<void> saveCpf(String cpf) async {
     try {
       emit(state.copyWith(isLoading: true, errorMessage: null, cpf: cpf));
 
-      // Busca usuário atual do Supabase
-      final existingUser = await userSupabaseDataSource.getUserByUid(
-        firebaseUser.uid,
-      );
+      await userSupabaseDataSource.setUserCpf(cpf);
 
-      if (existingUser != null) {
-        // Atualiza com o CPF
-        final updatedUser = UserModel(
-          uid: existingUser.uid,
-          email: existingUser.email,
-          fullName: existingUser.fullName,
-          displayName: existingUser.displayName,
-          photoUrl: existingUser.photoUrl,
-          phoneNumber: state.phoneNumber ?? existingUser.phoneNumber,
-          emailVerified: state.emailVerified,
-          phoneVerified: state.phoneVerified,
-          isPhoneWhatsApp:
-              state.isPhoneWhatsApp || existingUser.isPhoneWhatsApp,
-          cpf: cpf,
-          createdAt: existingUser.createdAt,
-          lastSignInTime: DateTime.now(),
-        );
+      await _markCpfSavedLocally();
 
-        await userSupabaseDataSource.updateUser(firebaseUser.uid, updatedUser);
-
-        emit(state.copyWith(isLoading: false, errorMessage: null));
-      } else {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            errorMessage: 'Usuário não encontrado no banco de dados.',
-          ),
-        );
-      }
+      emit(state.copyWith(isLoading: false, errorMessage: null, cpfSaved: true));
     } catch (e) {
       emit(
         state.copyWith(

@@ -1,24 +1,32 @@
 import 'package:incasa_app/core/error/failures.dart';
 import 'package:incasa_app/core/utils/result.dart';
+import 'package:incasa_app/data/datasources/local/auth_local_data_source.dart';
 import 'package:incasa_app/data/datasources/local/my_store_local_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/my_store_remote_data_source.dart';
 import 'package:incasa_app/data/models/marketplace/product_model.dart';
 import 'package:incasa_app/domain/entities/marketplace/product.dart';
 import 'package:incasa_app/domain/entities/my_store/store.dart';
 import 'package:incasa_app/domain/repositories/my_store/my_store_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyStoreRepositoryImpl implements MyStoreRepository {
   final MyStoreRemoteDataSource remoteDataSource;
   final MyStoreLocalDataSource localDataSource;
+  final AuthLocalDataSource authLocalDataSource;
 
   MyStoreRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
+    required this.authLocalDataSource,
   });
 
-  /// Helper para obter o ID do usuário logado
-  String? get _currentUserId => Supabase.instance.client.auth.currentUser?.id;
+  /// UUID interno (`users.id`) do usuário logado, salvo no cache pelo AuthCubit.
+  ///
+  /// Não usamos `client.auth` porque o GoTrue do Supabase fica desativado quando
+  /// o cliente é inicializado com `accessToken` (a identidade vem do Firebase).
+  Future<String?> _resolveOwnerId() async {
+    final userData = await authLocalDataSource.getUserData();
+    return userData?['id'] as String?;
+  }
 
   @override
   Future<Result<Store>> getMyStore() async {
@@ -34,7 +42,7 @@ class MyStoreRepositoryImpl implements MyStoreRepository {
   @override
   Future<Result<List<Product>>> getMyProducts() async {
     try {
-      final ownerId = _currentUserId;
+      final ownerId = await _resolveOwnerId();
       if (ownerId == null) {
         return Error(UnexpectedFailure('Usuário não autenticado'));
       }
@@ -50,7 +58,7 @@ class MyStoreRepositoryImpl implements MyStoreRepository {
   @override
   Future<Result<Product>> addProduct(Product product) async {
     try {
-      final ownerId = _currentUserId;
+      final ownerId = await _resolveOwnerId();
       if (ownerId == null) {
         return Error(UnexpectedFailure('Usuário não autenticado'));
       }

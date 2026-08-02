@@ -1,9 +1,13 @@
 import 'package:equatable/equatable.dart';
 
-/// Entity de Produto no domínio
-/// Regras de negócio puras, sem dependência de frameworks
+/// Entity de Produto no domínio.
+///
+/// Reflete o recurso `products` exposto pela API (incasa-api.yaml).
+/// `ownerId` é definido pelo backend a partir do usuário autenticado, por isso
+/// é opcional ao construir um produto novo no app.
 class Product extends Equatable {
   final String id;
+  final String ownerId;
   final String tipo; // 'produto' ou 'servico'
   final String name;
   final String description;
@@ -18,6 +22,7 @@ class Product extends Equatable {
   final bool prontaEntrega;
   final bool aceitaEncomenda;
   final DateTime createdAt;
+  final DateTime? updatedAt;
 
   const Product({
     required this.id,
@@ -27,6 +32,8 @@ class Product extends Equatable {
     required this.price,
     required this.imageUrl,
     required this.category,
+    required this.createdAt,
+    this.ownerId = '',
     this.estoque,
     this.prazoProducaoDias,
     this.prazoEntregaHoras,
@@ -34,12 +41,13 @@ class Product extends Equatable {
     this.disponivelVenda = true,
     this.prontaEntrega = true,
     this.aceitaEncomenda = false,
-    required this.createdAt,
+    this.updatedAt,
   });
 
   @override
   List<Object?> get props => [
     id,
+    ownerId,
     tipo,
     name,
     description,
@@ -54,5 +62,6 @@ class Product extends Equatable {
     prontaEntrega,
     aceitaEncomenda,
     createdAt,
+    updatedAt,
   ];
 }

@@ -19,17 +19,15 @@ class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
       throw Exception('Usuário não autenticado');
     }
 
-    // Mapeia os dados do Firebase Auth para o formato do UserModel
+    // Mapeia os dados do cache (derivados do Firebase Auth) para o recurso
+    // `users`. E-mail/telefone não pertencem a este recurso e são lidos da
+    // identidade do Firebase onde necessário.
     final userMap = {
-      "uid": userData['uid'] ?? '',
-      "email": userData['email'],
-      "fullName": userData['displayName'],
-      "displayName": userData['displayName'],
-      "photoUrl": userData['photoURL'],
-      "phoneNumber": userData['phoneNumber'],
-      "emailVerified": userData['emailVerified'] ?? false,
-      "createdAt": DateTime.now()
-          .toIso8601String(), // Firebase não retorna createdAt facilmente
+      "id": userData['id'] ?? userData['uid'] ?? '',
+      "full_name": userData['displayName'] ?? '',
+      "display_name": userData['displayName'],
+      "photo_url": userData['photoURL'],
+      "created_at": DateTime.now().toIso8601String(),
     };
 
     return UserModel.fromJson(userMap);

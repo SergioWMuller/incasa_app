@@ -21,7 +21,6 @@ class AddressCubit extends Cubit<AddressState> {
 
   /// Inicializa o cubit carregando dados do SharedPreferences e endereços do DB
   /// Deve ser chamado explicitamente ao criar o cubit
-  /// Usa Firebase UID diretamente como user_id (sem necessidade de buscar no Supabase)
   Future<void> initialize() async {
     print('🔵 ========== ADDRESS CUBIT INITIALIZE ==========');
     try {
@@ -40,16 +39,32 @@ class AddressCubit extends Cubit<AddressState> {
         return;
       }
 
-      // Extrai Firebase UID do JSON
       final userData = json.decode(userDataJson) as Map<String, dynamic>;
-      final String firebaseUid = userData['uid'] as String;
-      print('🔑 Firebase UID: $firebaseUid');
 
-      // Usa Firebase UID diretamente como userId (OPÇÃO 1)
-      // Não precisa buscar no Supabase - Firebase UID é a chave primária
-      emit(state.copyWith(userId: firebaseUid));
+      // A tabela `address` referencia `users.id` (UUID interno), não o UID do
+      // Firebase. O UUID é salvo em `id` pelo AuthCubit após resolver o
+      // usuário no Supabase; cai para o UID do Firebase só se ainda não
+      // resolvido (ex.: falha transitória de rede no login).
+      final String userId = (userData['id'] as String?) ?? userData['uid'] as String;
+      print('🔑 userId: $userId');
+
+      emit(state.copyWith(userId: userId));
       print('📋 Chamando initializeAddressList...');
-      await initializeAddressList(firebaseUid);
+      await initializeAddressList(userId);
+
+      // Recalcula isPrimary/canChangePrimary com a lista já carregada: se for
+      // o primeiro endereço do usuário, o switch deve vir ativado e travado.
+      // Não usa resetForm() aqui porque ele também reseta `status` para
+      // `initial` — este método é compartilhado com AddressListView, que
+      // depende do `status` (success/error) já setado por initializeAddressList
+      // para sair do loading quando a lista está vazia.
+      final isFirstAddress = state.addresses.isEmpty;
+      emit(
+        state.copyWith(
+          isPrimary: isFirstAddress,
+          canChangePrimary: !isFirstAddress,
+        ),
+      );
       print('✅ Initialize completo');
     } catch (e, stackTrace) {
       print('❌ Erro ao inicializar: $e');
@@ -746,9 +761,11 @@ class AddressCubit extends Cubit<AddressState> {
     final result = await _repository.deleteAddress(addressId);
 
     return switch (result) {
-      Success() => () {
-        // Recarrega a lista após deletar
-        refresh();
+      Success() => () async {
+        // Recarrega a lista após deletar — aguarda para não deixar `status`/
+        // `addresses` desatualizados se o chamador prosseguir imediatamente
+        // (ex.: abrir o formulário de novo endereço logo em seguida).
+        await refresh();
         return true;
       }(),
       Error(:final failure) => () {
@@ -863,6 +880,77 @@ class AddressCubit extends Cubit<AddressState> {
   /// Cancela as mudanças temporárias (volta ao estado original do DB)
   void cancelPrimaryChanges() {
     emit(state.copyWith(clearTemporaryPrimary: true));
+  }
+
+  /// Marca um endereço como principal imediatamente no banco de dados.
+  /// Essa ação salva o novo endereço principal e desmarca automaticamente
+  /// o endereço anterior.
+  Future<bool> setPrimaryAddress(String addressId) async {
+    if (state.currentPrimaryAddressId == addressId) {
+      return true;
+    }
+
+    try {
+      emit(state.copyWith(status: AddressStatus.loading, clearError: true));
+
+      final targetAddress = state.addresses.firstWhere(
+        (addr) => addr.addressId == addressId,
+      );
+
+      final updatedAddress = Address(
+        addressId: targetAddress.addressId,
+        userId: targetAddress.userId,
+        isPrimary: true,
+        street: targetAddress.street,
+        number: targetAddress.number,
+        complement: targetAddress.complement,
+        neighborhood: targetAddress.neighborhood,
+        city: targetAddress.city,
+        state: targetAddress.state,
+        countryCode: targetAddress.countryCode,
+        zipCode: targetAddress.zipCode,
+        addressType: targetAddress.addressType,
+        label: targetAddress.label,
+        latitude: targetAddress.latitude,
+        longitude: targetAddress.longitude,
+        createdAt: targetAddress.createdAt,
+        updatedAt: DateTime.now(),
+      );
+
+      final result = await _repository.saveAddress(updatedAddress);
+
+      return switch (result) {
+        Success() => () async {
+          await _demoteOtherPrimaryAddresses(addressId);
+          emit(
+            state.copyWith(
+              status: AddressStatus.success,
+              clearTemporaryPrimary: true,
+              clearError: true,
+            ),
+          );
+          return true;
+        }(),
+        Error(:final failure) => () {
+          emit(
+            state.copyWith(
+              status: AddressStatus.error,
+              errorMessage:
+                  'Erro ao alterar endereço principal: ${failure.message}',
+            ),
+          );
+          return false;
+        }(),
+      };
+    } catch (e) {
+      emit(
+        state.copyWith(
+          status: AddressStatus.error,
+          errorMessage: 'Erro ao alterar endereço principal: $e',
+        ),
+      );
+      return false;
+    }
   }
 
   /// Desmarca todos os outros endereços como principal

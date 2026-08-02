@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_state.dart';
+import 'package:incasa_app/features/onboarding/utils/onboarding_spacing.dart';
 
 class EmailVerificationStep extends StatelessWidget {
   const EmailVerificationStep({super.key});
@@ -11,7 +12,7 @@ class EmailVerificationStep extends StatelessWidget {
     return BlocBuilder<OnboardingCubit, OnboardingState>(
       builder: (context, state) {
         return Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(context.onboardingPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -20,30 +21,32 @@ class EmailVerificationStep extends StatelessWidget {
               // Ícone
               Center(
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  width: context.onboardingIconDiameter,
+                  height: context.onboardingIconDiameter,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     state.emailVerified
                         ? Icons.check_circle
                         : Icons.email_outlined,
-                    size: 40,
+                    size: context.onboardingIconDiameter * 0.5,
                     color: state.emailVerified
                         ? Theme.of(context).colorScheme.tertiary
                         : Theme.of(context).primaryColor,
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: context.onboardingSpacingLarge),
 
               // Título
               Center(
                 child: Text(
                   state.emailVerified
-                      ? 'Email Verificado!'
+                      ? 'Email Verificado !'
                       : 'Verifique seu Email',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -51,13 +54,13 @@ class EmailVerificationStep extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.onboardingSpacingMedium),
 
               // Descrição
               Center(
                 child: Text(
                   state.emailVerified
-                      ? 'Seu email foi verificado com sucesso!'
+                      ? 'Show, Seu email já está\n verificado pela Google !'
                       : 'Enviamos um link de verificação para\n${state.email}',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -69,21 +72,23 @@ class EmailVerificationStep extends StatelessWidget {
 
               // Mensagem de erro
               if (state.errorMessage != null) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: context.onboardingSpacingMedium),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(context.onboardingSpacingSmall),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(
+                      context.onboardingBorderRadius * 0.75,
+                    ),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.error_outline,
                         color: Theme.of(context).colorScheme.error,
-                        size: 20,
+                        size: context.onboardingSmallIconSize,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: context.onboardingSpacingSmall),
                       Expanded(
                         child: Text(
                           state.errorMessage!,
@@ -91,7 +96,7 @@ class EmailVerificationStep extends StatelessWidget {
                             color: Theme.of(
                               context,
                             ).colorScheme.onErrorContainer,
-                            fontSize: 13,
+                            fontSize: context.onboardingMessageFontSize,
                           ),
                         ),
                       ),
@@ -113,20 +118,26 @@ class EmailVerificationStep extends StatelessWidget {
                               .read<OnboardingCubit>()
                               .checkEmailVerification(),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(
+                        vertical: context.onboardingButtonPadding,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(
+                          context.onboardingBorderRadius,
+                        ),
                       ),
                     ),
                     child: state.isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                        ? SizedBox(
+                            height: context.onboardingSpinnerSize,
+                            width: context.onboardingSpinnerSize,
+                            child: CircularProgressIndicator(
+                              strokeWidth: context.onboardingSpinnerSize * 0.1,
+                            ),
                           )
-                        : const Text(
+                        : Text(
                             'Já Verifiquei',
-                            style: TextStyle(fontSize: 16),
+                            style: Theme.of(context).textTheme.labelLarge,
                           ),
                   ),
                 ),

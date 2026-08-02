@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/features/address/cubit/address_cubit.dart';
 import 'package:incasa_app/features/address/view/address_view.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_state.dart';
+import 'package:incasa_app/features/onboarding/widgets/cpf_field.dart';
 
 class CpfRegistrationStep extends StatefulWidget {
   const CpfRegistrationStep({super.key});
@@ -23,50 +23,28 @@ class _CpfRegistrationStepState extends State<CpfRegistrationStep> {
     super.dispose();
   }
 
-  String _formatCpf(String text) {
-    // Remove tudo que não é número
-    final numbers = text.replaceAll(RegExp(r'[^\d]'), '');
-
-    // Aplica a máscara XXX.XXX.XXX-XX
-    if (numbers.length <= 3) {
-      return numbers;
-    } else if (numbers.length <= 6) {
-      return '${numbers.substring(0, 3)}.${numbers.substring(3)}';
-    } else if (numbers.length <= 9) {
-      return '${numbers.substring(0, 3)}.${numbers.substring(3, 6)}.${numbers.substring(6)}';
-    } else {
-      return '${numbers.substring(0, 3)}.${numbers.substring(3, 6)}.${numbers.substring(6, 9)}-${numbers.substring(9, numbers.length > 11 ? 11 : numbers.length)}';
-    }
-  }
-
-  bool _isValidCpf(String cpf) {
-    final numbers = cpf.replaceAll(RegExp(r'[^\d]'), '');
-    return numbers.length == 11;
-  }
-
   void _saveCpf(BuildContext context) {
     final cpf = _cpfController.text.trim();
 
-    if (!_isValidCpf(cpf)) {
+    if (!CpfValidator.isValid(cpf)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Digite um CPF válido')));
       return;
     }
 
-    // Remove a formatação antes de salvar
-    final cleanCpf = cpf.replaceAll(RegExp(r'[^\d]'), '');
-    context.read<OnboardingCubit>().saveCpf(cleanCpf);
+    context.read<OnboardingCubit>().saveCpf(CpfValidator.strip(cpf));
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<OnboardingCubit, OnboardingState>(
       listener: (context, state) {
-        // Se o CPF foi salvo com sucesso, navega para cadastro de endereço
-        if (state.cpf != null &&
-            !state.isLoading &&
-            state.errorMessage == null) {
+        if (state.currentStep == OnboardingStep.cpfRegistration &&
+            state.cpfSaved) {
+          final cubit = context.read<OnboardingCubit>();
+          cubit.clearCpfSaved();
+
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -85,12 +63,12 @@ class _CpfRegistrationStepState extends State<CpfRegistrationStep> {
       },
       child: BlocBuilder<OnboardingCubit, OnboardingState>(
         builder: (context, state) {
-          return Padding(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Spacer(),
+                const SizedBox(height: 24),
 
                 // Ícone
                 Center(
@@ -137,31 +115,7 @@ class _CpfRegistrationStepState extends State<CpfRegistrationStep> {
                 const SizedBox(height: 32),
 
                 // Campo de CPF
-                TextField(
-                  controller: _cpfController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'CPF',
-                    hintText: '000.000.000-00',
-                    prefixIcon: const Icon(Icons.badge),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(11),
-                    TextInputFormatter.withFunction((oldValue, newValue) {
-                      final formatted = _formatCpf(newValue.text);
-                      return TextEditingValue(
-                        text: formatted,
-                        selection: TextSelection.collapsed(
-                          offset: formatted.length,
-                        ),
-                      );
-                    }),
-                  ],
-                ),
+                CpfField(controller: _cpfController),
 
                 // Mensagem informativa
                 const SizedBox(height: 12),
@@ -218,7 +172,7 @@ class _CpfRegistrationStepState extends State<CpfRegistrationStep> {
                   ),
                 ],
 
-                const Spacer(),
+                const SizedBox(height: 32),
 
                 // Botão de ação
                 SizedBox(
@@ -244,18 +198,7 @@ class _CpfRegistrationStepState extends State<CpfRegistrationStep> {
                   ),
                 ),
 
-                // Botão de pular
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: state.isLoading
-                        ? null
-                        : () => Navigator.of(context).pop(false),
-                    child: const Text('Pular por Agora'),
-                  ),
-                ),
-
+                // (Botão 'Pular por Agora' removido)
                 const SizedBox(height: 32),
               ],
             ),

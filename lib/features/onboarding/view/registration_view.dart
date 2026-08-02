@@ -18,7 +18,6 @@ class RegistrationView extends StatelessWidget {
           final email = state.email ?? 'usuario@email.com';
           final phoneNumber = state.phoneNumber ?? '';
           final cpf = state.cpf ?? '';
-
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -44,7 +43,6 @@ class RegistrationView extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
-
                 // Campo Telefone
                 TextFormField(
                   initialValue: phoneNumber,

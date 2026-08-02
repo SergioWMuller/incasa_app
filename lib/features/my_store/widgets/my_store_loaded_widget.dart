@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/theme/theme_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/my_store_state.dart';
 import 'package:incasa_app/features/my_store/view/add_product_view.dart';
+import 'package:incasa_app/features/my_store/view/my_store_edit_view.dart';
 import 'package:incasa_app/features/my_store/widgets/my_store_product_card.dart';
+import 'package:incasa_app/features/sell/widgets/sell_wizard_widget.dart';
 
 /// Widget de apresentação para MyStore (StatelessWidget)
 /// Usa DefaultTabController para gerenciar tabs sem StatefulWidget
@@ -15,7 +17,7 @@ class MyStoreLoadedWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: 0,
@@ -23,6 +25,7 @@ class MyStoreLoadedWidget extends StatelessWidget {
             tabs: [
               Tab(icon: Icon(Icons.store), text: 'Minha vitrine'),
               Tab(icon: Icon(Icons.storage_rounded), text: 'Meus produtos'),
+              Tab(icon: Icon(Icons.add_circle_outline), text: 'Anúncio'),
             ],
           ),
         ),
@@ -65,16 +68,28 @@ class MyStoreLoadedWidget extends StatelessWidget {
                     const SizedBox(height: 24),
                     BlocBuilder<ThemeCubit, ThemeState>(
                       builder: (context, themeState) {
-                        return Chip(
-                          label: Text(
-                            state.store!.isActive
-                                ? 'Loja Ativa'
-                                : 'Loja Inativa',
+                        return GestureDetector(
+                          // TODO: atalho temporário só para testar a
+                          // EditarLojaView — trocar por um botão/rota
+                          // definitivos depois.
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const MyStoreEditView(),
+                              ),
+                            );
+                          },
+                          child: Chip(
+                            label: Text(
+                              state.store!.isActive
+                                  ? 'Loja Ativa'
+                                  : 'Loja Inativa',
+                            ),
+                            backgroundColor: state.store!.isActive
+                                ? themeState.color.color
+                                : Colors.grey,
+                            labelStyle: const TextStyle(color: Colors.white),
                           ),
-                          backgroundColor: state.store!.isActive
-                              ? themeState.color.color
-                              : Colors.grey,
-                          labelStyle: const TextStyle(color: Colors.white),
                         );
                       },
                     ),
@@ -112,6 +127,9 @@ class MyStoreLoadedWidget extends StatelessWidget {
                 child: const Icon(Icons.add),
               ),
             ),
+
+            // Tab 3: Wizard de anúncio (tela 03 do design_handoff_incasa)
+            const SellWizardWidget(),
           ],
         ),
       ),

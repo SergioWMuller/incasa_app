@@ -1,160 +1,133 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:incasa_app/domain/entities/profile/user.dart';
 
+/// Model do recurso `users` (incasa-api.yaml).
+///
+/// Conversões:
+/// - [fromSupabase]/[toSupabase]: REST do Supabase (snake_case).
+/// - [fromJson]/[toJson]: cache local (SharedPreferences) e snapshots avulsos.
+/// - [fromEntity]: ponte a partir da entidade de domínio.
 class UserModel extends User {
   const UserModel({
-    // Obrigatórios
-    required super.uid,
+    required super.id,
+    required super.fullName,
     required super.createdAt,
-    super.email,
-    super.fullName,
+    required super.updatedAt,
     super.displayName,
     super.photoUrl,
-    // Contato
-    super.phoneNumber,
-    super.cpf,
-    // Timestamps
-    super.lastSignInTime,
-    // Verificações
-    super.emailVerified = false,
-    super.phoneVerified = false,
-    super.isPhoneWhatsApp = false,
+    super.sellerRating = 0.0,
+    super.cpfHmac,
+    super.cpfEncrypted,
   });
 
+  static DateTime _parseDateTime(dynamic value, DateTime fallback) {
+    if (value is DateTime) return value;
+    if (value is Timestamp) return value.toDate();
+    if (value is String && value.isNotEmpty) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    return fallback;
+  }
+
+  static double _parseRating(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
   // ========================================
-  // SUPABASE (MVP - USAR AGORA) ✅
+  // SUPABASE
   // ========================================
 
-  /// Converte dados do Supabase para UserModel
+  /// Converte uma linha REST da tabela `users` em [UserModel].
   factory UserModel.fromSupabase(Map<String, dynamic> map) {
+    final now = DateTime.now();
+    final createdAt = _parseDateTime(map['created_at'], now);
+    final updatedAt = _parseDateTime(map['updated_at'], createdAt);
+
     return UserModel(
-      uid: map['uid'] as String,
-      email: map['email'] as String?,
-      fullName: map['full_name'] as String?,
+      id: (map['id'] ?? '') as String,
+      fullName: (map['full_name'] ?? map['display_name'] ?? '') as String,
       displayName: map['display_name'] as String?,
       photoUrl: map['photo_url'] as String?,
-      phoneNumber: map['phone_number'] as String?,
-      cpf: map['cpf'] as String?,
-      createdAt: DateTime.parse(map['creation_time'] as String),
-      lastSignInTime: map['last_sign_in_time'] != null
-          ? DateTime.parse(map['last_sign_in_time'] as String)
-          : null,
-      emailVerified: map['email_verified'] as bool? ?? false,
-      phoneVerified: map['phone_verified'] as bool? ?? false,
-      isPhoneWhatsApp: map['is_phone_whatsapp'] as bool? ?? false,
+      sellerRating: _parseRating(map['seller_rating']),
+      cpfHmac: map['cpf_hmac'] as String?,
+      cpfEncrypted: map['cpf_encrypted'] as String?,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
-  /// Converte UserModel para Supabase
+  /// Payload de atualização (PATCH /users). Conforme `UserUpdate`,
+  /// apenas `display_name` e `photo_url` são editáveis pelo app.
+  /// `full_name`, `seller_rating` e CPF não são enviados daqui.
   Map<String, dynamic> toSupabase() {
     return {
-      'uid': uid,
-      'email': email,
+      'display_name': displayName,
+      'photo_url': photoUrl,
+    };
+  }
+
+  // ========================================
+  // JSON (cache local / snapshots)
+  // ========================================
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    final now = DateTime.now();
+    final createdAt = _parseDateTime(json['created_at'] ?? json['createdAt'], now);
+    final updatedAt = _parseDateTime(
+      json['updated_at'] ?? json['updatedAt'],
+      createdAt,
+    );
+
+    final displayName =
+        (json['display_name'] ?? json['displayName']) as String?;
+
+    return UserModel(
+      id: (json['id'] ?? json['uid'] ?? '') as String,
+      fullName:
+          (json['full_name'] ?? json['fullName'] ?? displayName ?? '') as String,
+      displayName: displayName,
+      photoUrl: (json['photo_url'] ?? json['photoUrl'] ?? json['photoURL'])
+          as String?,
+      sellerRating: _parseRating(json['seller_rating'] ?? json['sellerRating']),
+      cpfHmac: (json['cpf_hmac'] ?? json['cpfHmac']) as String?,
+      cpfEncrypted: (json['cpf_encrypted'] ?? json['cpfEncrypted']) as String?,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
       'full_name': fullName,
       'display_name': displayName,
       'photo_url': photoUrl,
-      'phone_number': phoneNumber,
-      'cpf': cpf,
-      'creation_time': createdAt.toIso8601String(),
-      if (lastSignInTime != null)
-        'last_sign_in_time': lastSignInTime!.toIso8601String(),
-      'email_verified': emailVerified,
-      'phone_verified': phoneVerified,
-      'is_phone_whatsapp': isPhoneWhatsApp,
+      'seller_rating': sellerRating,
+      'cpf_hmac': cpfHmac,
+      'cpf_encrypted': cpfEncrypted,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 
   // ========================================
-  // FIREBASE (COMPATIBILIDADE) ✅
+  // ENTITY
   // ========================================
 
-  /// Converte DocumentSnapshot do Firestore para UserModel
-  factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return UserModel(
-      uid: doc.id,
-      email: data['email'] as String?,
-      fullName: data['name'] as String?,
-      displayName: data['name'] as String?,
-      photoUrl: data['avatarUrl'] as String?,
-      phoneNumber: data['phone'] as String?,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-    );
-  }
-
-  /// Converte UserModel para Map do Firestore
-  Map<String, dynamic> toFirestore() {
-    return {
-      'name': fullName ?? displayName,
-      'email': email,
-      'avatarUrl': photoUrl,
-      'phone': phoneNumber,
-      'createdAt': Timestamp.fromDate(createdAt),
-    };
-  }
-
-  // ========================================
-  // LARAVEL API (FUTURO) 📦
-  // ========================================
-
-  /// Converte JSON da API Laravel para UserModel
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      uid: json['uid'] as String,
-      email: json['email'] as String?,
-      fullName: json['fullName'] as String?,
-      displayName: json['displayName'] as String?,
-      photoUrl: json['photoUrl'] as String?,
-      phoneNumber: json['phoneNumber'] as String?,
-      cpf: json['cpf'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      lastSignInTime: json['lastSignInTime'] != null
-          ? DateTime.parse(json['lastSignInTime'] as String)
-          : null,
-      emailVerified: json['emailVerified'] as bool? ?? false,
-      phoneVerified: json['phoneVerified'] as bool? ?? false,
-      isPhoneWhatsApp: json['isPhoneWhatsApp'] as bool? ?? false,
-    );
-  }
-
-  /// Converte UserModel para JSON para API Laravel
-  Map<String, dynamic> toJson() {
-    return {
-      'uid': uid,
-      'email': email,
-      'fullName': fullName,
-      'displayName': displayName,
-      'photoUrl': photoUrl,
-      'phoneNumber': phoneNumber,
-      'cpf': cpf,
-      'createdAt': createdAt.toIso8601String(),
-      if (lastSignInTime != null)
-        'lastSignInTime': lastSignInTime!.toIso8601String(),
-      'emailVerified': emailVerified,
-      'phoneVerified': phoneVerified,
-      'isPhoneWhatsApp': isPhoneWhatsApp,
-    };
-  }
-
-  // ========================================
-  // CONVERSÃO DE/PARA ENTITY
-  // ========================================
-
-  /// Converte Entity pura para Model
   factory UserModel.fromEntity(User user) {
     return UserModel(
-      uid: user.uid,
-      email: user.email,
+      id: user.id,
       fullName: user.fullName,
       displayName: user.displayName,
       photoUrl: user.photoUrl,
-      phoneNumber: user.phoneNumber,
-      cpf: user.cpf,
+      sellerRating: user.sellerRating,
+      cpfHmac: user.cpfHmac,
+      cpfEncrypted: user.cpfEncrypted,
       createdAt: user.createdAt,
-      lastSignInTime: user.lastSignInTime,
-      emailVerified: user.emailVerified,
-      phoneVerified: user.phoneVerified,
-      isPhoneWhatsApp: user.isPhoneWhatsApp,
+      updatedAt: user.updatedAt,
     );
   }
 }

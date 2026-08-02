@@ -11,6 +11,14 @@ class ProfileLoadedWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fallbackPhone = firebaseUser?.phoneNumber;
+    final email = firebaseUser?.email;
+    final avatarSource = [
+      user.displayName,
+      user.fullName,
+      email,
+    ].firstWhere((v) => v != null && v.isNotEmpty, orElse: () => 'U')!;
+
     return ListView(
       physics: const BouncingScrollPhysics(),
       children: [
@@ -26,29 +34,29 @@ class ProfileLoadedWidget extends StatelessWidget {
                     : null,
                 child: user.photoUrl == null
                     ? Text(
-                        (user.displayName ?? user.fullName ?? user.email ?? 'U')
-                            .substring(0, 1)
-                            .toUpperCase(),
+                        avatarSource.substring(0, 1).toUpperCase(),
                         style: const TextStyle(fontSize: 40),
                       )
                     : null,
               ),
               const SizedBox(height: 16),
               Text(
-                user.displayName ?? user.fullName ?? 'Usuário',
+                user.displayName?.isNotEmpty == true
+                    ? user.displayName!
+                    : (user.fullName.isNotEmpty ? user.fullName : 'Usuário'),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                user.email ?? '',
+                email ?? '',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              if (user.phoneNumber != null) ...[
+              if (fallbackPhone != null && fallbackPhone.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  user.phoneNumber!,
+                  fallbackPhone,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],

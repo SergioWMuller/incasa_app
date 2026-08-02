@@ -1,82 +1,50 @@
 import 'package:equatable/equatable.dart';
 
-/// Entity User (Perfil do usuário)
-/// Reflete o schema real do Supabase
+/// Entity User (perfil do usuário).
+///
+/// Reflete o recurso `users` exposto pela API (incasa-api.yaml).
+/// E-mail, telefone e CPF em texto puro NÃO pertencem a este recurso:
+/// - e-mail vive em `providers`;
+/// - telefones vivem em `phones`;
+/// - o CPF é gravado apenas como `cpf_hmac`/`cpf_encrypted` via RPC.
 class User extends Equatable {
-  // IDENTIFICAÇÃO
-  final String uid; // UID do usuário (Firebase/Google)
-  final String? email;
+  final String id;
+  final String fullName;
   final String? displayName;
-  final String? fullName;
-  final String? phoneNumber;
   final String? photoUrl;
-  final String? cpf;
 
-  // TIMESTAMPS
-  final DateTime createdAt; // creation_time
-  final DateTime? lastSignInTime;
+  /// Nota do vendedor (numeric(3,2) no banco). Gerenciado pelo servidor.
+  final double sellerRating;
 
-  // ENDEREÇO DE ENTREGA PADRÃO
-  final String? defaultShippingStreet;
-  final String? defaultShippingNumber;
-  final String? defaultShippingComplement;
-  final String? defaultShippingNeighborhood;
-  final String? defaultShippingCity;
-  final String? defaultShippingState;
-  final String? defaultShippingZipCode;
+  /// PII do CPF — nunca expor no app, presente apenas para completude do recurso.
+  final String? cpfHmac;
+  final String? cpfEncrypted;
 
-  // VERIFICAÇÕES
-  final bool emailVerified; // email_verified (default false)
-  final bool phoneVerified; // phone_verified (default false)
-  final bool isPhoneWhatsApp; // is_phone_whatsapp (default false)
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   const User({
-    // Obrigatórios
-    required this.uid,
+    required this.id,
+    required this.fullName,
     required this.createdAt,
-    this.email,
-    this.fullName,
+    required this.updatedAt,
     this.displayName,
     this.photoUrl,
-    // Contato
-    this.phoneNumber,
-    this.cpf,
-    // Timestamps
-    this.lastSignInTime,
-    // Endereço
-    this.defaultShippingStreet,
-    this.defaultShippingNumber,
-    this.defaultShippingComplement,
-    this.defaultShippingNeighborhood,
-    this.defaultShippingCity,
-    this.defaultShippingState,
-    this.defaultShippingZipCode,
-    // Verificações
-    this.emailVerified = false,
-    this.phoneVerified = false,
-    this.isPhoneWhatsApp = false,
+    this.sellerRating = 0.0,
+    this.cpfHmac,
+    this.cpfEncrypted,
   });
 
   @override
   List<Object?> get props => [
-    uid,
-    email,
+    id,
     fullName,
     displayName,
     photoUrl,
-    phoneNumber,
-    cpf,
+    sellerRating,
+    cpfHmac,
+    cpfEncrypted,
     createdAt,
-    lastSignInTime,
-    defaultShippingStreet,
-    defaultShippingNumber,
-    defaultShippingComplement,
-    defaultShippingNeighborhood,
-    defaultShippingCity,
-    defaultShippingState,
-    defaultShippingZipCode,
-    emailVerified,
-    phoneVerified,
-    isPhoneWhatsApp,
+    updatedAt,
   ];
 }

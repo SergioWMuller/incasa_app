@@ -8,6 +8,10 @@ class GetUserProfile extends UseCase<User, NoParams> {
 
   GetUserProfile(this.repository);
 
+  void setOnboardingPhase(bool isOnboardingPhase) {
+    repository.setOnboardingPhase(isOnboardingPhase);
+  }
+
   @override
   Future<Result<User>> call(NoParams params) async {
     return await repository.getUserProfile();

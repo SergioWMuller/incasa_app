@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_state.dart';
+import 'package:incasa_app/features/onboarding/utils/onboarding_spacing.dart';
 import 'package:incasa_app/features/onboarding/widgets/email_verification_step.dart';
 import 'package:incasa_app/features/onboarding/widgets/phone_verification_step.dart';
 import 'package:incasa_app/features/onboarding/widgets/cpf_registration_step.dart';
@@ -49,16 +50,12 @@ class _ProgressIndicator extends StatelessWidget {
         final totalSteps = OnboardingStep.values.length;
 
         return Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(context.onboardingPadding),
           child: Column(
             children: [
               // Título e subtítulo
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
                   const Spacer(),
                   Text(
                     'Etapa ${currentIndex + 1} de $totalSteps',
@@ -69,7 +66,7 @@ class _ProgressIndicator extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: context.onboardingSpacingMedium),
 
               // Barra de progresso
               Row(
@@ -80,15 +77,21 @@ class _ProgressIndicator extends StatelessWidget {
                   return Expanded(
                     child: Container(
                       margin: EdgeInsets.only(
-                        left: index == 0 ? 0 : 4,
-                        right: index == totalSteps - 1 ? 0 : 4,
+                        left: index == 0
+                            ? 0
+                            : context.onboardingSpacingSmall / 2,
+                        right: index == totalSteps - 1
+                            ? 0
+                            : context.onboardingSpacingSmall / 2,
                       ),
-                      height: 4,
+                      height: context.onboardingIndicatorHeight,
                       decoration: BoxDecoration(
                         color: isCompleted || isCurrent
                             ? Theme.of(context).primaryColor
                             : Theme.of(context).colorScheme.surfaceVariant,
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(
+                          context.onboardingBorderRadius * 0.25,
+                        ),
                       ),
                     ),
                   );

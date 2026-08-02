@@ -10,6 +10,11 @@ class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit({required this.getUserProfileUseCase})
     : super(const ProfileState());
 
+  void setOnboardingPhase(bool isOnboardingPhase) {
+    getUserProfileUseCase.setOnboardingPhase(isOnboardingPhase);
+    emit(state.copyWith(isOnboardingPhase: isOnboardingPhase));
+  }
+
   Future<void> loadProfile() async {
     emit(const ProfileState(status: ProfileStatus.loading));
 

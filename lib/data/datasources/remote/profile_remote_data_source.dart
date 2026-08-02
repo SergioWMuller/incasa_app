@@ -43,7 +43,8 @@ class ProfileFirebaseDataSourceImpl implements ProfileRemoteDataSource {
         throw Exception('Perfil não encontrado');
       }
 
-      return UserModel.fromFirestore(doc);
+      final data = doc.data() ?? <String, dynamic>{};
+      return UserModel.fromJson({...data, 'id': doc.id});
     } catch (e) {
       throw Exception('Erro ao buscar perfil: $e');
     }
@@ -55,7 +56,7 @@ class ProfileFirebaseDataSourceImpl implements ProfileRemoteDataSource {
       await firestore
           .collection('users')
           .doc(_currentUserId)
-          .update(user.toFirestore());
+          .update(user.toJson());
 
       // Retorna o perfil atualizado
       return getUserProfile();

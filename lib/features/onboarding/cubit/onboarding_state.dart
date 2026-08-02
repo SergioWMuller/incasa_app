@@ -13,6 +13,8 @@ class OnboardingState extends Equatable {
   final bool phoneVerified;
   final bool isPhoneWhatsApp;
   final String? verificationId; // ID da verificação do Firebase Phone Auth
+  final bool phoneSaved;
+  final bool cpfSaved;
 
   const OnboardingState({
     this.currentStep = OnboardingStep.emailVerification,
@@ -25,6 +27,8 @@ class OnboardingState extends Equatable {
     this.phoneVerified = false,
     this.isPhoneWhatsApp = false,
     this.verificationId,
+    this.phoneSaved = false,
+    this.cpfSaved = false,
   });
 
   OnboardingState copyWith({
@@ -38,6 +42,8 @@ class OnboardingState extends Equatable {
     bool? phoneVerified,
     bool? isPhoneWhatsApp,
     String? verificationId,
+    bool? phoneSaved,
+    bool? cpfSaved,
   }) {
     return OnboardingState(
       currentStep: currentStep ?? this.currentStep,
@@ -50,6 +56,8 @@ class OnboardingState extends Equatable {
       phoneVerified: phoneVerified ?? this.phoneVerified,
       isPhoneWhatsApp: isPhoneWhatsApp ?? this.isPhoneWhatsApp,
       verificationId: verificationId ?? this.verificationId,
+      phoneSaved: phoneSaved ?? this.phoneSaved,
+      cpfSaved: cpfSaved ?? this.cpfSaved,
     );
   }
 
@@ -65,5 +73,7 @@ class OnboardingState extends Equatable {
     phoneVerified,
     isPhoneWhatsApp,
     verificationId,
+    phoneSaved,
+    cpfSaved,
   ];
 }
