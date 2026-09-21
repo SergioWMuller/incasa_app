@@ -11,13 +11,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
-
+  
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Carrega variáveis de ambiente do .env
   await dotenv.load(fileName: ".env");
-
+ 
   // Valida env do Supabase antes da inicialização para evitar erros 401 difusos.
 
   SupabaseConstants.validateEnvOrThrow();

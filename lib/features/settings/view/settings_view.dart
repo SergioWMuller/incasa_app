@@ -47,7 +47,7 @@ class SettingsView extends StatelessWidget {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.assignment),
-                    title: const Text('Cadastro'),
+                    title: const Text('Minha Conta'),
                     subtitle: const Text('Email, Telefone e CPF'),
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
@@ -61,7 +61,8 @@ class SettingsView extends StatelessWidget {
                               phoneDataSource: sl<PhoneSupabaseDataSource>(),
                               authLocalDataSource: sl<AuthLocalDataSource>(),
                               firebaseUser: authState.user!,
-                            ),
+                            )..loadPhoneStatus()
+                              ..loadCpfMasked(),
                             child: const RegistrationView(),
                           ),
                         ),

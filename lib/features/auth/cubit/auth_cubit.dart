@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:incasa_app/core/network/supabase_session.dart';
@@ -9,7 +10,7 @@ import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   void logAuth(String message) {
-    print('[AUTH] $message');
+    log('[AUTH] $message');
   }
 
   final AuthService authService;
@@ -169,14 +170,20 @@ class AuthCubit extends Cubit<AuthState> {
       // 2. Salva os dados completos no SharedPreferences (local)
       await _saveUserToLocal(firebaseUser, supabaseUser: mergedSupabaseUser);
 
+      // Assim que a Edge Function confirma sucesso, o onboarding pode
+      // começar — não esperamos o REST (getUserById) para decidir, pois ele
+      // pode estar indisponível/lento e não deve travar o cadastro de
+      // telefone/CPF. Só quando conseguimos ler o perfil é que confiamos no
+      // `cpf_hmac` para saber se já está completo.
+      final needsOnboarding = supabaseUser != null
+          ? _needsOnboarding(supabaseUser, isNewUser: result.isNewUser)
+          : result.supabaseSaved;
+
       emit(
         AuthState(
           status: AuthStatus.authenticated,
           user: firebaseUser,
-          needsOnboarding: _needsOnboarding(
-            supabaseUser,
-            isNewUser: result.isNewUser,
-          ),
+          needsOnboarding: needsOnboarding,
         ),
       );
     } else {

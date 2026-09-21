@@ -10,7 +10,7 @@
 ## 1. O que é o Incasa
 
 App Flutter de **marketplace local** (MVP). O usuário faz login social, completa
-um onboarding obrigatório de 3 etapas e pode **comprar** (marketplace) e **vender**
+um onboarding obrigatório de 4 etapas e pode **comprar** (marketplace) e **vender**
 (minha loja) produtos/serviços.
 
 **Estado:** MVP em desenvolvimento ativo. Branch de trabalho: `develop`. Branch

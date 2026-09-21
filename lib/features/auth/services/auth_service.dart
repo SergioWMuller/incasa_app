@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -23,36 +24,36 @@ class AuthService {
 
   Future<AuthResult> signInWithGoogle() async {
     try {
-      print('🔵 [AUTH] ========== INICIANDO LOGIN GOOGLE ==========');
+      log('🔵 [AUTH] ========== INICIANDO LOGIN GOOGLE ==========');
 
       // PASSO 1: Abrir dialog do Google
-      print('🔵 [AUTH] Passo 1: Abrindo Google Sign-In...');
+      log('🔵 [AUTH] Passo 1: Abrindo Google Sign-In...');
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        print('🟠 [AUTH] Passo 1 CANCELADO: Usuário cancelou login');
+        log('🟠 [AUTH] Passo 1 CANCELADO: Usuário cancelou login');
         return AuthResult(
           userCredential: null,
           supabaseSaved: false,
           message: 'Login cancelado pelo usuário.',
         );
       }
-      print('✅ [AUTH] Passo 1 OK: ${googleUser.email}');
+      log('✅ [AUTH] Passo 1 OK: ${googleUser.email}');
 
       // PASSO 2: Obter tokens do Google
-      print('🔵 [AUTH] Passo 2: Obtendo tokens do Google...');
+      log('🔵 [AUTH] Passo 2: Obtendo tokens do Google...');
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
       final idToken = googleAuth.idToken;
-      print('✅ [AUTH] Passo 2 OK');
-      print(
+      log('✅ [AUTH] Passo 2 OK');
+      log(
         '   - idToken: ${idToken != null ? '${idToken.substring(0, 20)}...' : 'NULL ⚠️'}',
       );
-      print('   - accessToken: ${googleAuth.accessToken?.substring(0, 20)}...');
+      log('   - accessToken: ${googleAuth.accessToken?.substring(0, 20)}...');
 
       if (idToken == null) {
-        print('🔴 [AUTH] idToken é null — verifique o serverClientId');
+        log('🔴 [AUTH] idToken é null — verifique o serverClientId');
         return AuthResult(
           userCredential: null,
           supabaseSaved: false,
@@ -62,7 +63,7 @@ class AuthService {
       }
 
       // PASSO 3: Sign-in com Firebase
-      print('🔵 [AUTH] Passo 3: Autenticando no Firebase...');
+      log('🔵 [AUTH] Passo 3: Autenticando no Firebase...');
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: idToken,
@@ -73,33 +74,33 @@ class AuthService {
       final firebaseUser = userCredential.user;
 
       if (firebaseUser == null) {
-        print('🔴 [AUTH] Passo 3 ERRO: Firebase user é null');
+        log('🔴 [AUTH] Passo 3 ERRO: Firebase user é null');
         return AuthResult(
           userCredential: null,
           supabaseSaved: false,
           message: 'Erro ao autenticar com o Google.',
         );
       }
-      print('✅ [AUTH] Passo 3 OK');
-      print('   - Firebase UID: ${firebaseUser.uid}');
-      print('   - Email: ${firebaseUser.email}');
-      print('   - Display Name: ${firebaseUser.displayName}');
+      log('✅ [AUTH] Passo 3 OK');
+      log('   - Firebase UID: ${firebaseUser.uid}');
+      log('   - Email: ${firebaseUser.email}');
+      log('   - Display Name: ${firebaseUser.displayName}');
 
       // PASSO 4: Pegar Firebase idToken (assinado pelo Firebase, não pelo Google)
-      print('🔵 [AUTH] Passo 4: Obtendo Firebase idToken...');
+      log('🔵 [AUTH] Passo 4: Obtendo Firebase idToken...');
       final firebaseIdToken = await firebaseUser.getIdToken();
       if (firebaseIdToken == null) {
-        print('🔴 [AUTH] Passo 4 ERRO: Firebase idToken é null');
+        log('🔴 [AUTH] Passo 4 ERRO: Firebase idToken é null');
         return AuthResult(
           userCredential: null,
           supabaseSaved: false,
           message: 'Erro ao obter token do Firebase.',
         );
       }
-      print('✅ [AUTH] Passo 4 OK: Firebase idToken obtido');
+      log('✅ [AUTH] Passo 4 OK: Firebase idToken obtido');
 
       // PASSO 5: Chamar Edge Function
-      print('🔵 [AUTH] Passo 5: Chamando Edge Function...');
+      log('🔵 [AUTH] Passo 5: Chamando Edge Function...');
       bool supabaseSaved = true;
       String authMessage = 'Login realizado com sucesso!';
       Map<String, dynamic> edgeResult = {};
@@ -108,22 +109,22 @@ class AuthService {
         edgeResult = await _callAuthEdgeFunction(
           firebaseIdToken: firebaseIdToken,
         );
-        print('✅ [AUTH] Passo 5 OK: Edge Function respondeu');
-        print('   - user_id: ${edgeResult['user_id']}');
-        print('   - is_new_user: ${edgeResult['is_new_user']}');
-        print('   - is_new_provider: ${edgeResult['is_new_provider']}');
+        log('✅ [AUTH] Passo 5 OK: Edge Function respondeu');
+        log('   - user_id: ${edgeResult['user_id']}');
+        log('   - is_new_user: ${edgeResult['is_new_user']}');
+        log('   - is_new_provider: ${edgeResult['is_new_provider']}');
       } catch (e) {
         supabaseSaved = false;
         authMessage =
             'Login realizado, mas erro ao sincronizar com Supabase: $e';
-        print('⚠️ [AUTH] Passo 5 com falha não bloqueante: $e');
+        log('⚠️ [AUTH] Passo 5 com falha não bloqueante: $e');
       }
 
       // JWT do Supabase emitido pela Edge Function (quando já implementado no
       // backend) — ver ai/supabase-estado-atual.md §4/§7.
       final supabaseAccessToken = _extractSupabaseToken(edgeResult);
 
-      print('🟢 [AUTH] ========== LOGIN GOOGLE SUCESSO! ==========');
+      log('🟢 [AUTH] ========== LOGIN GOOGLE SUCESSO! ==========');
       return AuthResult(
         userCredential: userCredential,
         supabaseSaved: supabaseSaved,
@@ -134,9 +135,9 @@ class AuthService {
         supabaseAccessToken: supabaseAccessToken,
       );
     } catch (e) {
-      print('🔴 [AUTH] ========== LOGIN GOOGLE ERRO! ==========');
-      print('🔴 [AUTH] Erro: $e');
-      print('🔴 [AUTH] Tipo: ${e.runtimeType}');
+      log('🔴 [AUTH] ========== LOGIN GOOGLE ERRO! ==========');
+      log('🔴 [AUTH] Erro: $e');
+      log('🔴 [AUTH] Tipo: ${e.runtimeType}');
       return AuthResult(
         userCredential: null,
         supabaseSaved: false,
@@ -161,7 +162,7 @@ class AuthService {
       final edgeResult = await _callAuthEdgeFunction(firebaseIdToken: idToken);
       return _extractSupabaseToken(edgeResult);
     } catch (e) {
-      print('⚠️ [AUTH] Falha ao renovar JWT do Supabase: $e');
+      log('⚠️ [AUTH] Falha ao renovar JWT do Supabase: $e');
       return null;
     }
   }
@@ -181,7 +182,7 @@ class AuthService {
     required String firebaseIdToken,
   }) async {
     try {
-      print('🟡 [EDGE] Chamando Edge Function...');
+      log('🟡 [EDGE] Chamando Edge Function...');
 
       final anonKey = SupabaseConstants.supabaseAnonKey;
       if (anonKey.isEmpty) {
@@ -201,8 +202,8 @@ class AuthService {
         ),
       );
 
-      print('🟡 [EDGE] Status: ${response.statusCode}');
-      print('🟡 [EDGE] Body: ${response.data}');
+      log('🟡 [EDGE] Status: ${response.statusCode}');
+      log('🟡 [EDGE] Body: ${response.data}');
 
       final data = response.data as Map<String, dynamic>;
 
@@ -212,14 +213,14 @@ class AuthService {
 
       return data;
     } on DioException catch (e) {
-      print(
+      log(
         '🔴 [EDGE] DioException: ${e.response?.statusCode} — ${e.response?.data}',
       );
       throw Exception(
         'Erro na Edge Function: ${e.response?.data ?? e.message}',
       );
     } catch (e) {
-      print('🔴 [EDGE] Erro: $e');
+      log('🔴 [EDGE] Erro: $e');
       rethrow;
     }
   }

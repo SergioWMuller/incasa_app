@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/features/auth/cubit/auth_cubit.dart';
@@ -97,7 +98,7 @@ class ProfileMenuWidget extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        print('🔘 Botão Sair pressionado no dialog');
+                        log('🔘 Botão Sair pressionado no dialog');
                         Navigator.of(dialogContext).pop();
                         authCubit.signOut();
                       },

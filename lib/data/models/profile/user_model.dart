@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:incasa_app/domain/entities/profile/user.dart';
 
 /// Model do recurso `users` (incasa-api.yaml).
@@ -18,11 +17,11 @@ class UserModel extends User {
     super.sellerRating = 0.0,
     super.cpfHmac,
     super.cpfEncrypted,
+    super.cpfDisplay,
   });
 
   static DateTime _parseDateTime(dynamic value, DateTime fallback) {
     if (value is DateTime) return value;
-    if (value is Timestamp) return value.toDate();
     if (value is String && value.isNotEmpty) {
       final parsed = DateTime.tryParse(value);
       if (parsed != null) return parsed;
@@ -54,6 +53,7 @@ class UserModel extends User {
       sellerRating: _parseRating(map['seller_rating']),
       cpfHmac: map['cpf_hmac'] as String?,
       cpfEncrypted: map['cpf_encrypted'] as String?,
+      cpfDisplay: map['cpf_display'] as String?,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -94,6 +94,7 @@ class UserModel extends User {
       sellerRating: _parseRating(json['seller_rating'] ?? json['sellerRating']),
       cpfHmac: (json['cpf_hmac'] ?? json['cpfHmac']) as String?,
       cpfEncrypted: (json['cpf_encrypted'] ?? json['cpfEncrypted']) as String?,
+      cpfDisplay: (json['cpf_display'] ?? json['cpfDisplay']) as String?,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -108,6 +109,7 @@ class UserModel extends User {
       'seller_rating': sellerRating,
       'cpf_hmac': cpfHmac,
       'cpf_encrypted': cpfEncrypted,
+      'cpf_display': cpfDisplay,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -126,6 +128,7 @@ class UserModel extends User {
       sellerRating: user.sellerRating,
       cpfHmac: user.cpfHmac,
       cpfEncrypted: user.cpfEncrypted,
+      cpfDisplay: user.cpfDisplay,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     );

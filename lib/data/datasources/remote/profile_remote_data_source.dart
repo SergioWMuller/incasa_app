@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:incasa_app/core/network/dio_client.dart';
+import 'package:incasa_app/data/datasources/remote/user_supabase_data_source.dart';
 import 'package:incasa_app/data/models/profile/user_model.dart';
 
 // ========================================
@@ -13,20 +13,21 @@ abstract class ProfileRemoteDataSource {
 }
 
 // ========================================
-// IMPLEMENTAÇÃO FIREBASE (MVP - USAR AGORA) ✅
+// IMPLEMENTAÇÃO SUPABASE (MVP - USAR AGORA) ✅
 // ========================================
 
-class ProfileFirebaseDataSourceImpl implements ProfileRemoteDataSource {
-  final FirebaseFirestore firestore;
+class ProfileSupabaseDataSourceImpl implements ProfileRemoteDataSource {
+  final UserSupabaseDataSource userSupabaseDataSource;
   final FirebaseAuth firebaseAuth;
 
-  ProfileFirebaseDataSourceImpl({
-    required this.firestore,
+  ProfileSupabaseDataSourceImpl({
+    required this.userSupabaseDataSource,
     required this.firebaseAuth,
   });
 
-  /// Obtém o ID do usuário autenticado
-  String get _currentUserId {
+  /// UID do Firebase do usuário autenticado — resolvido para o UUID do
+  /// Supabase (`users.id`) pelo próprio `UserSupabaseDataSource` via `providers`.
+  String get _firebaseUid {
     final user = firebaseAuth.currentUser;
     if (user == null) {
       throw Exception('Usuário não autenticado');
@@ -36,33 +37,16 @@ class ProfileFirebaseDataSourceImpl implements ProfileRemoteDataSource {
 
   @override
   Future<UserModel> getUserProfile() async {
-    try {
-      final doc = await firestore.collection('users').doc(_currentUserId).get();
-
-      if (!doc.exists) {
-        throw Exception('Perfil não encontrado');
-      }
-
-      final data = doc.data() ?? <String, dynamic>{};
-      return UserModel.fromJson({...data, 'id': doc.id});
-    } catch (e) {
-      throw Exception('Erro ao buscar perfil: $e');
+    final user = await userSupabaseDataSource.getUserById(_firebaseUid);
+    if (user == null) {
+      throw Exception('Perfil não encontrado no Supabase');
     }
+    return user;
   }
 
   @override
   Future<UserModel> updateUserProfile(UserModel user) async {
-    try {
-      await firestore
-          .collection('users')
-          .doc(_currentUserId)
-          .update(user.toJson());
-
-      // Retorna o perfil atualizado
-      return getUserProfile();
-    } catch (e) {
-      throw Exception('Erro ao atualizar perfil: $e');
-    }
+    return userSupabaseDataSource.updateUser(_firebaseUid, user);
   }
 }
 

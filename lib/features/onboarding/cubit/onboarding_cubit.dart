@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,9 +8,10 @@ import 'package:incasa_app/data/datasources/remote/user_supabase_data_source.dar
 import 'package:incasa_app/data/models/profile/phone_model.dart';
 import 'onboarding_state.dart';
 
-/// Cubit do onboarding (3 etapas obrigatórias):
+/// Cubit do onboarding (4 etapas):
+/// 0. **Boas-vindas** — tela de transição, sem dado nenhum envolvido.
 /// 1. **E-mail** — já persistido em `providers` no login (Edge Function); aqui é
-///    só verificação visual via Firebase.
+///    só confirmação visual via Firebase.
 /// 2. **Telefone** — gravado na tabela `phones` (`PhoneSupabaseDataSource`).
 /// 3. **CPF** — gravado via RPC `set_user_cpf` (só `cpf_hmac`/`cpf_encrypted`).
 class OnboardingCubit extends Cubit<OnboardingState> {
@@ -24,16 +26,10 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     required this.phoneDataSource,
     required this.authLocalDataSource,
     required this.firebaseUser,
-  }) : pageController = PageController(
-         initialPage: firebaseUser.emailVerified
-             ? OnboardingStep.phoneVerification.index
-             : OnboardingStep.emailVerification.index,
-       ),
+  }) : pageController = PageController(initialPage: OnboardingStep.welcome.index),
        super(
          OnboardingState(
-           currentStep: firebaseUser.emailVerified
-               ? OnboardingStep.phoneVerification
-               : OnboardingStep.emailVerification,
+           currentStep: OnboardingStep.welcome,
            email: firebaseUser.email,
            emailVerified: firebaseUser.emailVerified,
          ),
@@ -59,13 +55,22 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       }
     } catch (e) {
       // Ignora erros ao carregar dados - apenas não atualiza o estado
-      print('Erro ao carregar dados do usuário: $e');
+      log('Erro ao carregar dados do usuário: $e');
     }
   }
 
   /// Avança para a próxima etapa
   void nextStep() {
     switch (state.currentStep) {
+      case OnboardingStep.welcome:
+        emit(
+          state.copyWith(
+            currentStep: OnboardingStep.emailVerification,
+            errorMessage: null,
+          ),
+        );
+        _animateToCurrentStep();
+        break;
       case OnboardingStep.emailVerification:
         emit(
           state.copyWith(
@@ -93,8 +98,17 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   /// Volta para a etapa anterior
   void previousStep() {
     switch (state.currentStep) {
-      case OnboardingStep.emailVerification:
+      case OnboardingStep.welcome:
         // Primeira etapa - não faz nada
+        break;
+      case OnboardingStep.emailVerification:
+        emit(
+          state.copyWith(
+            currentStep: OnboardingStep.welcome,
+            errorMessage: null,
+          ),
+        );
+        _animateToCurrentStep();
         break;
       case OnboardingStep.phoneVerification:
         emit(
@@ -485,6 +499,47 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           errorMessage: 'Erro ao salvar CPF: $e',
         ),
       );
+    }
+  }
+
+  /// Busca o CPF já cadastrado (campo `cpf_display`, gravado por
+  /// `set_user_cpf` no momento do cadastro — 2 primeiros + 2 últimos
+  /// dígitos). Usado pela tela "Configurações > Cadastro" para mostrar o
+  /// status sem nunca decifrar/reexpor o CPF completo. Falha silenciosa: sem
+  /// CPF/erro de rede, a tela só mostra "não cadastrado" em vez de travar.
+  Future<void> loadCpfMasked() async {
+    try {
+      final user = await userSupabaseDataSource.getUserById(firebaseUser.uid);
+      emit(state.copyWith(cpfMasked: user?.cpfDisplay));
+    } catch (e) {
+      log('Erro ao carregar CPF mascarado: $e');
+    }
+  }
+
+  /// Busca o telefone principal já cadastrado (número + WhatsApp) direto da
+  /// tabela `phones`. Usado pela tela "Configurações > Cadastro" — diferente
+  /// do CPF, o telefone não é PII criptografada, então o número completo pode
+  /// ser mostrado. Falha silenciosa: sem telefone/erro de rede, a tela só
+  /// mostra o campo vazio em vez de travar.
+  Future<void> loadPhoneStatus() async {
+    try {
+      final phones = await phoneDataSource.getPhones();
+      if (phones.isEmpty) return;
+
+      final primary = phones.firstWhere(
+        (p) => p.isPrimary,
+        orElse: () => phones.first,
+      );
+
+      emit(
+        state.copyWith(
+          phoneNumber: primary.fullNumber ?? primary.number,
+          phoneVerified: primary.isVerified,
+          isPhoneWhatsApp: primary.hasWhatsapp,
+        ),
+      );
+    } catch (e) {
+      log('Erro ao carregar telefone: $e');
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:incasa_app/core/network/supabase_client.dart';
 import 'package:incasa_app/data/models/profile/address_model.dart';
 
@@ -62,11 +63,11 @@ class AddressSupabaseDataSourceImpl implements AddressSupabaseDataSource {
 
   @override
   Future<AddressModel> createAddress(AddressModel address) async {
-    print('🟡 ========== DATASOURCE CREATE ADDRESS ==========');
+    log('🟡 ========== DATASOURCE CREATE ADDRESS ==========');
     try {
       final json = address.toJson();
-      print('📤 JSON sendo enviado para Supabase:');
-      print(
+      log('📤 JSON sendo enviado para Supabase:');
+      log(
         '   ${json.entries.map((e) => '${e.key}: ${e.value}').join('\n   ')}',
       );
 
@@ -76,20 +77,20 @@ class AddressSupabaseDataSourceImpl implements AddressSupabaseDataSource {
           .select()
           .single();
 
-      print('✅ Response recebido do Supabase:');
-      print(
+      log('✅ Response recebido do Supabase:');
+      log(
         '   ${response.entries.map((e) => '${e.key}: ${e.value}').join('\n   ')}',
       );
-      print('🟡 ==========================================');
+      log('🟡 ==========================================');
 
       return AddressModel.fromJson(response);
     } catch (e, stackTrace) {
-      print('🔴 ========== ERRO NO DATASOURCE CREATE ==========');
-      print('🔴 Exception: $e');
-      print('🔴 Tipo: ${e.runtimeType}');
-      print('🔴 StackTrace:');
-      print(stackTrace);
-      print('🔴 ==========================================');
+      log('🔴 ========== ERRO NO DATASOURCE CREATE ==========');
+      log('🔴 Exception: $e');
+      log('🔴 Tipo: ${e.runtimeType}');
+      log('🔴 StackTrace:');
+      log(stackTrace.toString());
+      log('🔴 ==========================================');
       throw Exception('Erro ao criar endereço no Supabase: $e');
     }
   }
@@ -99,12 +100,12 @@ class AddressSupabaseDataSourceImpl implements AddressSupabaseDataSource {
     String addressId,
     AddressModel address,
   ) async {
-    print('🟡 ========== DATASOURCE UPDATE ADDRESS ==========');
-    print('📌 addressId: $addressId');
+    log('🟡 ========== DATASOURCE UPDATE ADDRESS ==========');
+    log('📌 addressId: $addressId');
     try {
       final json = address.toJson();
-      print('📤 JSON sendo enviado para Supabase:');
-      print(
+      log('📤 JSON sendo enviado para Supabase:');
+      log(
         '   ${json.entries.map((e) => '${e.key}: ${e.value}').join('\n   ')}',
       );
 
@@ -115,20 +116,20 @@ class AddressSupabaseDataSourceImpl implements AddressSupabaseDataSource {
           .select()
           .single();
 
-      print('✅ Response recebido do Supabase:');
-      print(
+      log('✅ Response recebido do Supabase:');
+      log(
         '   ${response.entries.map((e) => '${e.key}: ${e.value}').join('\n   ')}',
       );
-      print('🟡 ==========================================');
+      log('🟡 ==========================================');
 
       return AddressModel.fromJson(response);
     } catch (e, stackTrace) {
-      print('🔴 ========== ERRO NO DATASOURCE UPDATE ==========');
-      print('🔴 Exception: $e');
-      print('🔴 Tipo: ${e.runtimeType}');
-      print('🔴 StackTrace:');
-      print(stackTrace);
-      print('🔴 ==========================================');
+      log('🔴 ========== ERRO NO DATASOURCE UPDATE ==========');
+      log('🔴 Exception: $e');
+      log('🔴 Tipo: ${e.runtimeType}');
+      log('🔴 StackTrace:');
+      log(stackTrace.toString());
+      log('🔴 ==========================================');
       throw Exception('Erro ao atualizar endereço no Supabase: $e');
     }
   }

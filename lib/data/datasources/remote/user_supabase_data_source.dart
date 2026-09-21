@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:incasa_app/core/constants/supabase_constants.dart';
 import 'package:incasa_app/core/network/supabase_client.dart';
 import 'package:incasa_app/data/models/profile/user_model.dart';
@@ -109,12 +110,12 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
   @override
   Future<UserModel> createUser(UserModel user) async {
     try {
-      print('🟡 [SUPABASE] users.insert: Criando novo usuário');
-      print('   - ID: ${user.id}');
-      print('   - Full Name: ${user.fullName}');
+      log('🟡 [SUPABASE] users.insert: Criando novo usuário');
+      log('   - ID: ${user.id}');
+      log('   - Full Name: ${user.fullName}');
 
       final userSupabaseData = user.toSupabase();
-      print('   - Dados a enviar: ${userSupabaseData.keys.toList()}');
+      log('   - Dados a enviar: ${userSupabaseData.keys.toList()}');
 
       final response = await supabase
           .from(SupabaseConstants.usersTable)
@@ -122,12 +123,12 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
           .select()
           .single();
 
-      print('✅ [SUPABASE] users.insert: Usuário criado com sucesso');
-      print('   - Response: ${response['id']}');
+      log('✅ [SUPABASE] users.insert: Usuário criado com sucesso');
+      log('   - Response: ${response['id']}');
 
       return UserModel.fromSupabase(response);
     } catch (e) {
-      print('🔴 [SUPABASE] users.insert ERROR: $e');
+      log('🔴 [SUPABASE] users.insert ERROR: $e');
       throw Exception('Erro ao criar usuário no Supabase: $e');
     }
   }
@@ -142,11 +143,11 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
         );
       }
 
-      print('🔵 ========== SUPABASE UPDATE USER ==========');
-      print('📌 ID: $id -> UUID: $userUuid');
+      log('🔵 ========== SUPABASE UPDATE USER ==========');
+      log('📌 ID: $id -> UUID: $userUuid');
 
       final dataToSend = user.toSupabase();
-      print('📤 DADOS ENVIADOS: ${dataToSend.keys.toList()}');
+      log('📤 DADOS ENVIADOS: ${dataToSend.keys.toList()}');
 
       final response = await supabase
           .from(SupabaseConstants.usersTable)
@@ -155,15 +156,15 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
           .select()
           .single();
 
-      print('📥 RESPONSE: ${response.keys.toList()}');
-      print('🔵 ==========================================');
+      log('📥 RESPONSE: ${response.keys.toList()}');
+      log('🔵 ==========================================');
 
       return UserModel.fromSupabase(response);
     } catch (e) {
-      print('🔴 ========== ERRO SUPABASE UPDATE ==========');
-      print('🔴 Erro completo: $e');
-      print('🔴 Tipo do erro: ${e.runtimeType}');
-      print('🔴 ==========================================');
+      log('🔴 ========== ERRO SUPABASE UPDATE ==========');
+      log('🔴 Erro completo: $e');
+      log('🔴 Tipo do erro: ${e.runtimeType}');
+      log('🔴 ==========================================');
       throw Exception('Erro ao atualizar usuário no Supabase: $e');
     }
   }
@@ -197,7 +198,7 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
     String providerUid,
   ) async {
     try {
-      print(
+      log(
         '🟡 [SUPABASE] Buscando user_id: provider=$provider, providerUid=$providerUid',
       );
       final response = await supabase
@@ -208,15 +209,15 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
           .maybeSingle();
 
       if (response == null) {
-        print('✅ [SUPABASE] providers: Nenhum registro encontrado');
+        log('✅ [SUPABASE] providers: Nenhum registro encontrado');
         return null;
       }
 
       final userId = response['user_id'] as String?;
-      print('✅ [SUPABASE] providers: User ID encontrado: $userId');
+      log('✅ [SUPABASE] providers: User ID encontrado: $userId');
       return userId;
     } catch (e) {
-      print('🔴 [SUPABASE] providers ERROR: $e');
+      log('🔴 [SUPABASE] providers ERROR: $e');
       throw Exception('Erro ao buscar user_id por provider: $e');
     }
   }
@@ -229,11 +230,11 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
     String? email,
   ) async {
     try {
-      print('🟡 [SUPABASE] providers.insert: Vinculando provider');
-      print('   - User ID: $userId');
-      print('   - Provider: $provider');
-      print('   - Provider UID: $providerUid');
-      print('   - Email: $email');
+      log('🟡 [SUPABASE] providers.insert: Vinculando provider');
+      log('   - User ID: $userId');
+      log('   - Provider: $provider');
+      log('   - Provider UID: $providerUid');
+      log('   - Email: $email');
 
       final now = DateTime.now().toIso8601String();
       final dataToInsert = {
@@ -247,15 +248,15 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
         'last_login_at': now,
       };
 
-      print('   - Dados: ${dataToInsert.keys.toList()}');
+      log('   - Dados: ${dataToInsert.keys.toList()}');
 
       await supabase.from('providers').insert(dataToInsert);
 
-      print(
+      log(
         '✅ [SUPABASE] providers.insert: Provider vinculado com sucesso',
       );
     } catch (e) {
-      print('🔴 [SUPABASE] providers.insert ERROR: $e');
+      log('🔴 [SUPABASE] providers.insert ERROR: $e');
       throw Exception('Erro ao vincular provider ao usuário: $e');
     }
   }
@@ -263,10 +264,11 @@ class UserSupabaseDataSourceImpl implements UserSupabaseDataSource {
   @override
   Future<void> setUserCpf(String cpf) async {
     try {
-      await supabase.rpc(
+      final response = await supabase.rpc(
         SupabaseConstants.rpcSetUserCpf,
         params: {'p_cpf': cpf},
       );
+      log('🔍 [SUPABASE] set_user_cpf response: $response');
     } catch (e) {
       // Repassa a mensagem do banco (ex.: "Este CPF já está cadastrado em outra
       // conta.") para o cubit tratar/exibir.

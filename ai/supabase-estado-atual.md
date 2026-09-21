@@ -1,7 +1,10 @@
 # Supabase — Estado Atual do Banco
 
 > Referência viva do banco do projeto.  
-> Stack: Supabase self-hosted em VPS (`91.98.84.101`) + Postgres 15.8.  
+> Stack: Supabase self-hosted em VPS (`49.13.158.137`) + Postgres 15.8.
+> Exposto publicamente via HTTPS em `api.incasa.app.br` (proxy reverso Caddy,
+> certificado Let's Encrypt automático — porta 8000 não fica mais exposta
+> direto pra internet, só o Caddy fala com o Kong internamente).  
 > Atualizado em: 28/06/2026.
 
 ---

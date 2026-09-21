@@ -20,6 +20,11 @@ class User extends Equatable {
   final String? cpfHmac;
   final String? cpfEncrypted;
 
+  /// Fragmento do CPF pronto para exibição (2 primeiros + 2 últimos dígitos,
+  /// ex.: `12*.***.***-11`), gravado por `set_user_cpf` no momento do
+  /// cadastro. Não é PII reversível — nunca reconstrói o CPF completo.
+  final String? cpfDisplay;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -33,6 +38,7 @@ class User extends Equatable {
     this.sellerRating = 0.0,
     this.cpfHmac,
     this.cpfEncrypted,
+    this.cpfDisplay,
   });
 
   @override
@@ -44,6 +50,7 @@ class User extends Equatable {
     sellerRating,
     cpfHmac,
     cpfEncrypted,
+    cpfDisplay,
     createdAt,
     updatedAt,
   ];

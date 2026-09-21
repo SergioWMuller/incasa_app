@@ -4,28 +4,30 @@ info:
   title: Incasa — Supabase API
   version: "1.0.0"
   description: |
-    API completa do backend Supabase (self-hosted em 91.98.84.101).
-    
+    API completa do backend Supabase (self-hosted na VPS 49.13.158.137,
+    exposto via HTTPS em api.incasa.app.br — proxy reverso Caddy com
+    certificado Let's Encrypt automático).
+
     ## Autenticação
     Todos os endpoints REST exigem dois headers:
     - `apikey`: anon key do Supabase
     - `Authorization: Bearer <firebase_id_token>`: token obtido via Firebase Auth
-    
+
     A Edge Function `auth-firebase` **não** exige header de autenticação —
     ela usa service_role internamente.
-    
+
     ## Base URLs
-    - REST:           http://91.98.84.101:8000/rest/v1
-    - Edge Functions: http://91.98.84.101:8000/functions/v1
-    
+    - REST:           https://api.incasa.app.br/rest/v1
+    - Edge Functions: https://api.incasa.app.br/functions/v1
+
     ## Estado atual das policies
     As três policies "Allow all operations" (users, address, products) estão
     ativas durante a transição. Após a migration 006 ser aplicada, o token
     Firebase será substituído por um JWT do Supabase emitido pela Edge Function.
 
 servers:
-  - url: http://91.98.84.101:8000
-    description: VPS self-hosted (produção/dev)
+  - url: https://api.incasa.app.br
+    description: VPS self-hosted (produção/dev), atrás de HTTPS via Caddy
 
 # ---------------------------------------------------------------------------
 # Segurança

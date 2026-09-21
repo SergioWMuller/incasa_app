@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:incasa_app/core/error/failures.dart';
 import 'package:incasa_app/core/utils/result.dart';
 import 'package:incasa_app/data/datasources/remote/address_supabase_data_source.dart';
@@ -32,48 +33,48 @@ class AddressRepositoryImpl implements AddressRepository {
 
   @override
   Future<Result<Address>> saveAddress(Address address) async {
-    print('🔵 ========== REPOSITORY SAVE ADDRESS ==========');
-    print('📋 Address Entity:');
-    print('   - addressId: ${address.addressId}');
-    print('   - userId: ${address.userId}');
-    print('   - isPrimary: ${address.isPrimary}');
-    print('   - street: ${address.street}');
-    print('   - number: ${address.number}');
-    print('   - city: ${address.city}');
-    print('   - state: ${address.state}');
-    print('   - countryCode: ${address.countryCode}');
-    print('   - zipCode: ${address.zipCode}');
-    print('   - addressType: ${address.addressType}');
+    log('🔵 ========== REPOSITORY SAVE ADDRESS ==========');
+    log('📋 Address Entity:');
+    log('   - addressId: ${address.addressId}');
+    log('   - userId: ${address.userId}');
+    log('   - isPrimary: ${address.isPrimary}');
+    log('   - street: ${address.street}');
+    log('   - number: ${address.number}');
+    log('   - city: ${address.city}');
+    log('   - state: ${address.state}');
+    log('   - countryCode: ${address.countryCode}');
+    log('   - zipCode: ${address.zipCode}');
+    log('   - addressType: ${address.addressType}');
 
     try {
       final addressModel = AddressModel.fromEntity(address);
 
-      print('📦 AddressModel criado');
+      log('📦 AddressModel criado');
 
       // Se addressId for null, cria. Se não, atualiza.
       if (address.addressId == null) {
-        print('➕ CREATE: Chamando dataSource.createAddress...');
+        log('➕ CREATE: Chamando dataSource.createAddress...');
         final created = await dataSource.createAddress(addressModel);
-        print('✅ CREATE bem-sucedido! addressId: ${created.addressId}');
-        print('🔵 ==========================================');
+        log('✅ CREATE bem-sucedido! addressId: ${created.addressId}');
+        log('🔵 ==========================================');
         return Success(created);
       } else {
-        print('🔄 UPDATE: Chamando dataSource.updateAddress...');
+        log('🔄 UPDATE: Chamando dataSource.updateAddress...');
         final updated = await dataSource.updateAddress(
           address.addressId!,
           addressModel,
         );
-        print('✅ UPDATE bem-sucedido!');
-        print('🔵 ==========================================');
+        log('✅ UPDATE bem-sucedido!');
+        log('🔵 ==========================================');
         return Success(updated);
       }
     } catch (e, stackTrace) {
-      print('🔴 ========== ERRO NO REPOSITORY ==========');
-      print('🔴 Exception: $e');
-      print('🔴 Tipo: ${e.runtimeType}');
-      print('🔴 StackTrace:');
-      print(stackTrace);
-      print('🔴 ==========================================');
+      log('🔴 ========== ERRO NO REPOSITORY ==========');
+      log('🔴 Exception: $e');
+      log('🔴 Tipo: ${e.runtimeType}');
+      log('🔴 StackTrace:');
+      log(stackTrace.toString());
+      log('🔴 ==========================================');
       return Error(ServerFailure(e.toString()));
     }
   }

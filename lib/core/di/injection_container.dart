@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:incasa_app/core/network/supabase_client.dart';
@@ -72,7 +71,6 @@ Future<void> initializeDependencies() async {
   sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
 
   // MVP - Firebase (Auth) ✅
-  sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
   sl.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
 
   // MVP - Supabase (Database) ✅
@@ -126,9 +124,12 @@ Future<void> initializeDependencies() async {
     () => ProfileLocalDataSourceImpl(authLocalDataSource: sl()),
   );
 
-  // MVP - Firebase (USAR AGORA) ✅
+  // MVP - Supabase (USAR AGORA) ✅
   sl.registerLazySingleton<ProfileRemoteDataSource>(
-    () => ProfileFirebaseDataSourceImpl(firestore: sl(), firebaseAuth: sl()),
+    () => ProfileSupabaseDataSourceImpl(
+      userSupabaseDataSource: sl(),
+      firebaseAuth: sl(),
+    ),
   );
 
   // Futuro - Laravel (descomentar quando migrar) 📦

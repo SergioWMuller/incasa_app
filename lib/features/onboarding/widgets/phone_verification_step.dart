@@ -87,7 +87,7 @@ class _PhoneVerificationStepState extends State<PhoneVerificationStep> {
                   // Título
                   Center(
                     child: Text(
-                      'Cadastre seu Telefone',
+                      'Seu Telefone\ncom WhatsApp',
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center,
@@ -98,14 +98,14 @@ class _PhoneVerificationStepState extends State<PhoneVerificationStep> {
                   // Descrição
                   Center(
                     child: Text(
-                      "Informe o número do seu celular !\n(O mesmo utilizado no WhatsApp)",
+                      "Informe seu número de telefone celular !\n(o mesmo utilizado no WhatsApp)",
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         height: 1.5,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                  ),
+                  ), 
 
                   const SizedBox(height: 32),
 
@@ -140,7 +140,7 @@ class _PhoneVerificationStepState extends State<PhoneVerificationStep> {
                     child: SwitchListTile(
                       title: const Text('Este número é WhatsApp?'),
                       subtitle: Text(
-                        'Marque se este número possui WhatsApp',
+                        'Confirme que este número é o seu número usado no WhatsApp',
                         style: TextStyle(
                           fontSize: 12,
                           color: Theme.of(context).colorScheme.onSurfaceVariant,

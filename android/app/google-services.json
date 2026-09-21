@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "289817032686-5ptj31tc1s5e9smd5mdogp8ur6fh9s90.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.app.incasa.projeto_incasa_app",
+            "certificate_hash": "3fb0db33be2c8a38319392a268052dd72b80f99b"
+          }
+        },
+        {
           "client_id": "289817032686-sftg35qnc1okmmglec0v2rbcmov3l1ur.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

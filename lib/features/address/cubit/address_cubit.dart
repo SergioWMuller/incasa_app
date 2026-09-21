@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
@@ -22,14 +23,14 @@ class AddressCubit extends Cubit<AddressState> {
   /// Inicializa o cubit carregando dados do SharedPreferences e endereços do DB
   /// Deve ser chamado explicitamente ao criar o cubit
   Future<void> initialize() async {
-    print('🔵 ========== ADDRESS CUBIT INITIALIZE ==========');
+    log('🔵 ========== ADDRESS CUBIT INITIALIZE ==========');
     try {
       // Busca dados do usuário do SharedPreferences
       final userDataJson = _prefs.getString('userGoogleAccount');
-      print('📦 userDataJson: ${userDataJson != null ? "existe" : "null"}');
+      log('📦 userDataJson: ${userDataJson != null ? "existe" : "null"}');
 
       if (userDataJson == null) {
-        print('❌ Usuário não autenticado');
+        log('❌ Usuário não autenticado');
         emit(
           state.copyWith(
             status: AddressStatus.error,
@@ -46,10 +47,10 @@ class AddressCubit extends Cubit<AddressState> {
       // usuário no Supabase; cai para o UID do Firebase só se ainda não
       // resolvido (ex.: falha transitória de rede no login).
       final String userId = (userData['id'] as String?) ?? userData['uid'] as String;
-      print('🔑 userId: $userId');
+      log('🔑 userId: $userId');
 
       emit(state.copyWith(userId: userId));
-      print('📋 Chamando initializeAddressList...');
+      log('📋 Chamando initializeAddressList...');
       await initializeAddressList(userId);
 
       // Recalcula isPrimary/canChangePrimary com a lista já carregada: se for
@@ -65,10 +66,10 @@ class AddressCubit extends Cubit<AddressState> {
           canChangePrimary: !isFirstAddress,
         ),
       );
-      print('✅ Initialize completo');
+      log('✅ Initialize completo');
     } catch (e, stackTrace) {
-      print('❌ Erro ao inicializar: $e');
-      print('Stack: $stackTrace');
+      log('❌ Erro ao inicializar: $e');
+      log('Stack: $stackTrace');
       emit(
         state.copyWith(
           status: AddressStatus.error,
@@ -199,7 +200,7 @@ class AddressCubit extends Cubit<AddressState> {
         position.latitude,
         position.longitude,
       );
-      print(placemarks[0]);
+      log(placemarks[0].toString());
       if (placemarks.isEmpty) {
         throw Exception('Não foi possível obter o endereço');
       }
@@ -571,21 +572,21 @@ class AddressCubit extends Cubit<AddressState> {
 
   /// Salva endereço no Supabase (CREATE se addressId for null, UPDATE se não for)
   Future<bool> saveAddress() async {
-    print('🟢 ========== SAVE ADDRESS ==========');
-    print('📋 Dados do state:');
-    print('   - addressId: ${state.addressId}');
-    print('   - userId: ${state.userId}');
-    print('   - isPrimary: ${state.isPrimary}');
-    print('   - street: ${state.street}');
-    print('   - number: ${state.number}');
-    print('   - city: ${state.city}');
-    print('   - state: ${state.state}');
-    print('   - zipCode: ${state.zipCode}');
-    print('   - addressType: ${state.addressType}');
+    log('🟢 ========== SAVE ADDRESS ==========');
+    log('📋 Dados do state:');
+    log('   - addressId: ${state.addressId}');
+    log('   - userId: ${state.userId}');
+    log('   - isPrimary: ${state.isPrimary}');
+    log('   - street: ${state.street}');
+    log('   - number: ${state.number}');
+    log('   - city: ${state.city}');
+    log('   - state: ${state.state}');
+    log('   - zipCode: ${state.zipCode}');
+    log('   - addressType: ${state.addressType}');
 
     // Validação básica
     if (!canSave()) {
-      print('❌ Validação falhou: campos obrigatórios não preenchidos');
+      log('❌ Validação falhou: campos obrigatórios não preenchidos');
       emit(
         state.copyWith(
           status: AddressStatus.error,
@@ -619,15 +620,15 @@ class AddressCubit extends Cubit<AddressState> {
         updatedAt: DateTime.now(),
       );
 
-      print('📤 Chamando repository.saveAddress...');
+      log('📤 Chamando repository.saveAddress...');
 
       // Chama repository (detecta automaticamente CREATE vs UPDATE)
       final result = await _repository.saveAddress(address);
 
       return switch (result) {
         Success(:final data) => () async {
-          print('✅ Sucesso! addressId: ${data.addressId}');
-          print('🟢 ==========================================');
+          log('✅ Sucesso! addressId: ${data.addressId}');
+          log('🟢 ==========================================');
           emit(
             state.copyWith(
               status: AddressStatus.success,
@@ -642,10 +643,10 @@ class AddressCubit extends Cubit<AddressState> {
           return true;
         }(),
         Error(:final failure) => () {
-          print('🔴 ========== ERRO NO REPOSITORY ==========');
-          print('🔴 Mensagem: ${failure.message}');
-          print('🔴 Tipo: ${failure.runtimeType}');
-          print('🔴 ==========================================');
+          log('🔴 ========== ERRO NO REPOSITORY ==========');
+          log('🔴 Mensagem: ${failure.message}');
+          log('🔴 Tipo: ${failure.runtimeType}');
+          log('🔴 ==========================================');
           emit(
             state.copyWith(
               status: AddressStatus.error,
@@ -656,12 +657,12 @@ class AddressCubit extends Cubit<AddressState> {
         }(),
       };
     } catch (e, stackTrace) {
-      print('🔴 ========== EXCEPTION CAPTURADA ==========');
-      print('🔴 Exception: $e');
-      print('🔴 Tipo: ${e.runtimeType}');
-      print('🔴 StackTrace:');
-      print(stackTrace);
-      print('🔴 ==========================================');
+      log('🔴 ========== EXCEPTION CAPTURADA ==========');
+      log('🔴 Exception: $e');
+      log('🔴 Tipo: ${e.runtimeType}');
+      log('🔴 StackTrace:');
+      log(stackTrace.toString());
+      log('🔴 ==========================================');
       emit(
         state.copyWith(
           status: AddressStatus.error,
@@ -688,8 +689,8 @@ class AddressCubit extends Cubit<AddressState> {
 
   /// Carrega os endereços do usuário
   Future<void> loadAddresses(String userId) async {
-    print('🔵 ========== LOAD ADDRESSES ==========');
-    print('👤 userId: $userId');
+    log('🔵 ========== LOAD ADDRESSES ==========');
+    log('👤 userId: $userId');
 
     emit(
       state.copyWith(
@@ -699,12 +700,12 @@ class AddressCubit extends Cubit<AddressState> {
       ),
     );
 
-    print('📡 Chamando repository.getUserAddresses...');
+    log('📡 Chamando repository.getUserAddresses...');
     final result = await _repository.getUserAddresses(userId);
 
     switch (result) {
       case Success(:final data):
-        print('✅ Sucesso! ${data.length} endereços encontrados');
+        log('✅ Sucesso! ${data.length} endereços encontrados');
 
         // Encontra qual endereço é o principal no DB
         String? primaryAddressId;
@@ -713,16 +714,16 @@ class AddressCubit extends Cubit<AddressState> {
           final primaryIndex = data.indexWhere((addr) => addr.isPrimary);
           if (primaryIndex != -1) {
             primaryAddressId = data[primaryIndex].addressId;
-            print('🏠 Endereço principal encontrado: $primaryAddressId');
+            log('🏠 Endereço principal encontrado: $primaryAddressId');
           } else {
             // Se nenhum for principal, usa o primeiro
             primaryAddressId = data.first.addressId;
-            print(
+            log(
               '🏠 Nenhum principal definido, usando primeiro: $primaryAddressId',
             );
           }
         } else {
-          print('📭 Lista de endereços vazia');
+          log('📭 Lista de endereços vazia');
         }
 
         emit(
@@ -735,11 +736,11 @@ class AddressCubit extends Cubit<AddressState> {
             clearError: true,
           ),
         );
-        print('✅ Initialize completo');
-        print('🔵 ==========================================');
+        log('✅ Initialize completo');
+        log('🔵 ==========================================');
       case Error(:final failure):
-        print('❌ Erro: ${failure.message}');
-        print('🔵 ==========================================');
+        log('❌ Erro: ${failure.message}');
+        log('🔵 ==========================================');
         emit(
           state.copyWith(
             status: AddressStatus.error,
@@ -990,7 +991,7 @@ class AddressCubit extends Cubit<AddressState> {
       // Recarrega a lista para refletir mudanças
       await refresh();
     } catch (e) {
-      print('⚠️ Erro ao desmarcar outros endereços principais: $e');
+      log('⚠️ Erro ao desmarcar outros endereços principais: $e');
       // Não emite erro pois a operação principal já foi bem-sucedida
       // Apenas recarrega a lista
       await refresh();

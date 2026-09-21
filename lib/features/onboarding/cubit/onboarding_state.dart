@@ -1,6 +1,11 @@
 import 'package:equatable/equatable.dart';
 
-enum OnboardingStep { emailVerification, phoneVerification, cpfRegistration }
+enum OnboardingStep {
+  welcome,
+  emailVerification,
+  phoneVerification,
+  cpfRegistration,
+}
 
 class OnboardingState extends Equatable {
   final OnboardingStep currentStep;
@@ -16,6 +21,10 @@ class OnboardingState extends Equatable {
   final bool phoneSaved;
   final bool cpfSaved;
 
+  /// CPF já mascarado (ex.: `12*.***.***-11`), buscado via RPC
+  /// `get_user_cpf_masked`. `null` = ainda não carregado ou usuário sem CPF.
+  final String? cpfMasked;
+
   const OnboardingState({
     this.currentStep = OnboardingStep.emailVerification,
     this.isLoading = false,
@@ -29,6 +38,7 @@ class OnboardingState extends Equatable {
     this.verificationId,
     this.phoneSaved = false,
     this.cpfSaved = false,
+    this.cpfMasked,
   });
 
   OnboardingState copyWith({
@@ -44,6 +54,7 @@ class OnboardingState extends Equatable {
     String? verificationId,
     bool? phoneSaved,
     bool? cpfSaved,
+    String? cpfMasked,
   }) {
     return OnboardingState(
       currentStep: currentStep ?? this.currentStep,
@@ -58,6 +69,7 @@ class OnboardingState extends Equatable {
       verificationId: verificationId ?? this.verificationId,
       phoneSaved: phoneSaved ?? this.phoneSaved,
       cpfSaved: cpfSaved ?? this.cpfSaved,
+      cpfMasked: cpfMasked ?? this.cpfMasked,
     );
   }
 
@@ -75,5 +87,6 @@ class OnboardingState extends Equatable {
     verificationId,
     phoneSaved,
     cpfSaved,
+    cpfMasked,
   ];
 }

@@ -4,6 +4,8 @@ import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_state.dart';
 import 'package:incasa_app/features/onboarding/utils/onboarding_spacing.dart';
 
+/// Etapa 2: confirmação visual do e-mail (já vem preenchido/verificado pelo
+/// Firebase — ver CLAUDE.md, "auto-populado do Firebase").
 class EmailVerificationStep extends StatelessWidget {
   const EmailVerificationStep({super.key});
 
@@ -46,7 +48,7 @@ class EmailVerificationStep extends StatelessWidget {
               Center(
                 child: Text(
                   state.emailVerified
-                      ? 'Email Verificado !'
+                      ? 'Email Já Verificado !'
                       : 'Verifique seu Email',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
@@ -54,21 +56,33 @@ class EmailVerificationStep extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(height: context.onboardingSpacingMedium),
 
-              // Descrição
-              Center(
-                child: Text(
-                  state.emailVerified
-                      ? 'Show, Seu email já está\n verificado pela Google !'
-                      : 'Enviamos um link de verificação para\n${state.email}',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.5,
+              if (state.email != null) ...[
+                SizedBox(height: context.onboardingSpacingMedium),
+                Center(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: context.onboardingSpacingMedium,
+                      vertical: context.onboardingSpacingSmall,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(
+                        context.onboardingBorderRadius,
+                      ),
+                    ),
+                    child: Text(
+                      state.email!,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ),
+              ],
 
               // Mensagem de erro
               if (state.errorMessage != null) ...[
@@ -100,10 +114,25 @@ class EmailVerificationStep extends StatelessWidget {
                           ),
                         ),
                       ),
+                      SizedBox(width: context.onboardingSpacingMedium),
                     ],
                   ),
                 ),
               ],
+              // Descrição
+              Center(
+                child: Text(
+                  state.emailVerified
+                      ? 'Show, seu email foi\nverificado pela Google !'
+                      : 'Enviamos um link de verificação para o\nemail abaixo',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
 
               const Spacer(),
 

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_state.dart';
 import 'package:incasa_app/features/onboarding/utils/onboarding_spacing.dart';
+import 'package:incasa_app/features/onboarding/widgets/welcome_step.dart';
 import 'package:incasa_app/features/onboarding/widgets/email_verification_step.dart';
 import 'package:incasa_app/features/onboarding/widgets/phone_verification_step.dart';
 import 'package:incasa_app/features/onboarding/widgets/cpf_registration_step.dart';
@@ -28,6 +29,7 @@ class OnboardingView extends StatelessWidget {
                 controller: cubit.pageController,
                 physics: const NeverScrollableScrollPhysics(),
                 children: const [
+                  WelcomeStep(),
                   EmailVerificationStep(),
                   PhoneVerificationStep(),
                   CpfRegistrationStep(),

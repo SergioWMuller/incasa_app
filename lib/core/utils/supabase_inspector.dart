@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:incasa_app/core/network/supabase_client.dart';
 import 'dart:convert';
 
@@ -21,22 +22,22 @@ class SupabaseInspector {
   /// [limit] - Número de registros para examinar (padrão: 3)
   Future<void> inspectTable(String tableName, {int limit = 3}) async {
     try {
-      print('\n${'=' * 60}');
-      print('🔍 INSPECIONANDO TABELA: $tableName');
-      print('=' * 60);
+      log('\n${'=' * 60}');
+      log('🔍 INSPECIONANDO TABELA: $tableName');
+      log('=' * 60);
 
       final response = await supabase.from(tableName).select().limit(limit);
 
       if (response.isEmpty) {
-        print('⚠️  Tabela vazia ou não existe');
-        print('💡 Dica: Verifique se o nome está correto e se há dados');
+        log('⚠️  Tabela vazia ou não existe');
+        log('💡 Dica: Verifique se o nome está correto e se há dados');
         return;
       }
 
       final firstRecord = response[0];
 
-      print('\n📊 CAMPOS ENCONTRADOS:');
-      print('-' * 60);
+      log('\n📊 CAMPOS ENCONTRADOS:');
+      log('-' * 60);
 
       firstRecord.forEach((key, value) {
         final dartType = _inferDartType(value);
@@ -44,36 +45,36 @@ class SupabaseInspector {
         final snakeCase = key;
         final camelCase = _toCamelCase(key);
 
-        print('  ✓ $snakeCase');
-        print('    → Dart type: $dartType$isNullable');
-        print('    → camelCase: $camelCase');
-        print('    → Exemplo: $value');
-        print('');
+        log('  ✓ $snakeCase');
+        log('    → Dart type: $dartType$isNullable');
+        log('    → camelCase: $camelCase');
+        log('    → Exemplo: $value');
+        log('');
       });
 
-      print('📝 CÓDIGO SUGERIDO PARA fromSupabase():');
-      print('-' * 60);
+      log('📝 CÓDIGO SUGERIDO PARA fromSupabase():');
+      log('-' * 60);
       _generateFromSupabaseCode(tableName, firstRecord);
 
-      print('\n📝 CÓDIGO SUGERIDO PARA toSupabase():');
-      print('-' * 60);
+      log('\n📝 CÓDIGO SUGERIDO PARA toSupabase():');
+      log('-' * 60);
       _generateToSupabaseCode(firstRecord);
 
-      print('\n📋 JSON COMPLETO (primeiro registro):');
-      print('-' * 60);
-      print(JsonEncoder.withIndent('  ').convert(firstRecord));
+      log('\n📋 JSON COMPLETO (primeiro registro):');
+      log('-' * 60);
+      log(JsonEncoder.withIndent('  ').convert(firstRecord));
 
       if (response.length > 1) {
-        print('\n💡 Total de registros examinados: ${response.length}');
+        log('\n💡 Total de registros examinados: ${response.length}');
       }
     } catch (e, stackTrace) {
-      print('❌ ERRO ao inspecionar tabela "$tableName"');
-      print('   Detalhes: $e');
-      print('   Stack: $stackTrace');
-      print('\n💡 Dicas:');
-      print('   - Verifique se a tabela existe no Supabase');
-      print('   - Verifique as permissões RLS (Row Level Security)');
-      print('   - Verifique sua conexão com o Supabase');
+      log('❌ ERRO ao inspecionar tabela "$tableName"');
+      log('   Detalhes: $e');
+      log('   Stack: $stackTrace');
+      log('\n💡 Dicas:');
+      log('   - Verifique se a tabela existe no Supabase');
+      log('   - Verifique as permissões RLS (Row Level Security)');
+      log('   - Verifique sua conexão com o Supabase');
     }
   }
 
@@ -81,15 +82,15 @@ class SupabaseInspector {
   Future<void> inspectAllTables() async {
     final tables = ['users', 'products', 'categories', 'stores'];
 
-    print('\n🚀 INICIANDO INSPEÇÃO DE TODAS AS TABELAS');
-    print('Tabelas: ${tables.join(', ')}');
+    log('\n🚀 INICIANDO INSPEÇÃO DE TODAS AS TABELAS');
+    log('Tabelas: ${tables.join(', ')}');
 
     for (final table in tables) {
       await inspectTable(table);
-      print('\n');
+      log('\n');
     }
 
-    print('✅ INSPEÇÃO COMPLETA!');
+    log('✅ INSPEÇÃO COMPLETA!');
   }
 
   /// Infere o tipo Dart baseado no valor
@@ -144,7 +145,7 @@ class SupabaseInspector {
   ) {
     final className = _toClassName(tableName);
 
-    print('''
+    log('''
 factory ${className}Model.fromSupabase(Map<String, dynamic> map) {
   return ${className}Model(''');
 
@@ -153,25 +154,25 @@ factory ${className}Model.fromSupabase(Map<String, dynamic> map) {
       final dartType = _inferDartType(value);
 
       if (value == null) {
-        print("    $camelCase: map['$key'] as $dartType?,");
+        log("    $camelCase: map['$key'] as $dartType?,");
       } else if (dartType == 'DateTime') {
-        print("    $camelCase: DateTime.parse(map['$key'] as String),");
+        log("    $camelCase: DateTime.parse(map['$key'] as String),");
       } else if (dartType.startsWith('List')) {
-        print(
+        log(
           "    $camelCase: (map['$key'] as List).cast<${dartType.replaceAll('List<', '').replaceAll('>', '')}>(),",
         );
       } else {
-        print("    $camelCase: map['$key'] as $dartType,");
+        log("    $camelCase: map['$key'] as $dartType,");
       }
     });
 
-    print('''  );
+    log('''  );
 }''');
   }
 
   /// Gera código exemplo para toSupabase()
   void _generateToSupabaseCode(Map<String, dynamic> record) {
-    print('''
+    log('''
 Map<String, dynamic> toSupabase() {
   return {''');
 
@@ -180,13 +181,13 @@ Map<String, dynamic> toSupabase() {
       final dartType = _inferDartType(value);
 
       if (dartType == 'DateTime') {
-        print("    '$key': $camelCase.toIso8601String(),");
+        log("    '$key': $camelCase.toIso8601String(),");
       } else {
-        print("    '$key': $camelCase,");
+        log("    '$key': $camelCase,");
       }
     });
 
-    print('''  };
+    log('''  };
 }''');
   }
 
@@ -219,15 +220,15 @@ Map<String, dynamic> toSupabase() {
           .maybeSingle();
 
       if (response == null) {
-        print('⚠️  Não há dados na tabela para comparar');
+        log('⚠️  Não há dados na tabela para comparar');
         return;
       }
 
       final schemaFields = response;
 
-      print('\n🔄 COMPARANDO MODEL COM SCHEMA REAL');
-      print('Tabela: $tableName');
-      print('-' * 60);
+      log('\n🔄 COMPARANDO MODEL COM SCHEMA REAL');
+      log('Tabela: $tableName');
+      log('-' * 60);
 
       // Campos no schema mas não na model
       final missingInModel = <String>[];
@@ -248,24 +249,24 @@ Map<String, dynamic> toSupabase() {
       });
 
       if (missingInModel.isEmpty && missingInSchema.isEmpty) {
-        print('✅ Model está sincronizada com o schema!');
+        log('✅ Model está sincronizada com o schema!');
       } else {
         if (missingInModel.isNotEmpty) {
-          print('⚠️  Campos no Schema mas NÃO na Model:');
+          log('⚠️  Campos no Schema mas NÃO na Model:');
           for (final field in missingInModel) {
-            print('   - $field (${_toCamelCase(field)})');
+            log('   - $field (${_toCamelCase(field)})');
           }
         }
 
         if (missingInSchema.isNotEmpty) {
-          print('\n⚠️  Campos na Model mas NÃO no Schema:');
+          log('\n⚠️  Campos na Model mas NÃO no Schema:');
           for (final field in missingInSchema) {
-            print('   - $field');
+            log('   - $field');
           }
         }
       }
     } catch (e) {
-      print('❌ Erro ao comparar: $e');
+      log('❌ Erro ao comparar: $e');
     }
   }
 
