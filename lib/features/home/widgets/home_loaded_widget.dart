@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/core/widgets/design/design_avatar_widget.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/home/cubit/home_cubit.dart';
 import 'package:incasa_app/features/home/cubit/home_state.dart';
 import 'package:incasa_app/features/home/widgets/home_product_card_widget.dart';
@@ -57,9 +58,7 @@ class HomeLoadedWidget extends StatelessWidget {
           decoration: InputDecoration(
             hintText: 'Buscar comida, artesanato, serviços…',
             prefixIcon: const Icon(Icons.search),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(24),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -124,8 +123,9 @@ class HomeLoadedWidget extends StatelessWidget {
             ),
         ] else
           ...state.neighbors.map(
-            (neighbor) => Card(
+            (neighbor) => NeumorphicSurface(
               margin: const EdgeInsets.only(bottom: 10),
+              borderRadius: BorderRadius.circular(16),
               child: ListTile(
                 leading: DesignAvatarWidget(
                   name: neighbor.name,

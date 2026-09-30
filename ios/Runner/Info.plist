@@ -24,6 +24,21 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- REVERSED_CLIENT_ID do GoogleService-Info.plist: exigido pelo
+				     Firebase Phone Auth para o retorno da verificação via
+				     reCAPTCHA (fallback quando o APNs silencioso não está
+				     disponível). Também usado pelo google_sign_in. -->
+				<string>com.googleusercontent.apps.899647823112-2lumlrqoh22fvrmpn22353k4tdck7h3q</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSLocationAlwaysUsageDescription</key>

@@ -51,4 +51,5 @@ class SupabaseConstants {
 
   // RPCs
   static const String rpcSetUserCpf = 'set_user_cpf';
+  static const String rpcGetRegistrationInfo = 'get_registration_info';
 }

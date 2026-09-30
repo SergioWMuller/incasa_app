@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
-import 'package:incasa_app/features/onboarding/cubit/onboarding_state.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
+import 'package:incasa_app/features/onboarding/cubit/registration_cubit.dart';
+import 'package:incasa_app/features/onboarding/cubit/registration_state.dart';
+import 'package:incasa_app/features/onboarding/utils/registration_formatters.dart';
 
 class RegistrationView extends StatelessWidget {
   const RegistrationView({super.key});
@@ -10,14 +12,26 @@ class RegistrationView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Dados da Conta')),
-      body: BlocBuilder<OnboardingCubit, OnboardingState>(
+      body: BlocBuilder<RegistrationCubit, RegistrationState>(
         builder: (context, state) {
-          final email = state.email ?? 'usuario@email.com';
+          switch (state.status) {
+            case RegistrationStatus.loading:
+              return const Center(child: CircularProgressIndicator());
+            case RegistrationStatus.error:
+              return _ErrorView(
+                message: state.errorMessage,
+                onRetry: () =>
+                    context.read<RegistrationCubit>().loadRegistration(),
+              );
+            case RegistrationStatus.loaded:
+              break;
+          }
 
-          final phoneNumber = state.phoneNumber;
-          final hasPhone = phoneNumber != null && phoneNumber.isNotEmpty;
+          final email = state.info?.email;
+          final phone = state.info?.phone;
+          final cpf = state.info?.cpf;
 
-          final cpf = state.cpfMasked;
+          final hasEmail = email != null && email.isNotEmpty;
           final hasCpf = cpf != null && cpf.isNotEmpty;
 
           return ListView(
@@ -30,45 +44,45 @@ class RegistrationView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-
               _AccountInfoCard(
                 icon: Icons.email_outlined,
                 label: 'E-mail',
-                value: email,
+                value: hasEmail ? email : null,
                 badges: [
-                  state.emailVerified
-                      ? const _StatusBadge.verified('Verificado')
-                      : const _StatusBadge.pending('Não verificado'),
+                  hasEmail
+                      ? const _StatusBadge.verified('Cadastrado')
+                      : const _StatusBadge.pending('Não cadastrado'),
                 ],
               ),
               const SizedBox(height: 12),
-
               _AccountInfoCard(
                 icon: Icons.phone_outlined,
                 label: 'Telefone',
-                value: hasPhone ? phoneNumber : 'Não cadastrado',
+                value: phone != null ? formatRegistrationPhone(phone) : null,
                 badges: [
-                  if (hasPhone && state.phoneVerified)
-                    const _StatusBadge.verified('Verificado'),
-                  if (hasPhone && state.isPhoneWhatsApp)
-                    const _StatusBadge.info(
-                      'WhatsApp',
-                      icon: Icons.chat_bubble_outline,
-                    ),
-                  if (!hasPhone) const _StatusBadge.pending('Não cadastrado'),
+                  if (phone == null)
+                    const _StatusBadge.pending('Não cadastrado')
+                  else ...[
+                    phone.isVerified
+                        ? const _StatusBadge.verified('Verificado')
+                        : const _StatusBadge.pending('Não verificado'),
+                    if (phone.hasWhatsapp)
+                      const _StatusBadge.info(
+                        'WhatsApp',
+                        icon: Icons.chat_bubble_outline,
+                      ),
+                  ],
                 ],
               ),
               const SizedBox(height: 12),
-
               _AccountInfoCard(
                 icon: Icons.badge_outlined,
                 label: 'CPF',
-                value: hasCpf ? cpf : 'Não cadastrado',
+                value: hasCpf ? cpf : null,
                 badges: [
-                  if (hasCpf)
-                    const _StatusBadge.verified('Cadastrado')
-                  else
-                    const _StatusBadge.pending('Não cadastrado'),
+                  hasCpf
+                      ? const _StatusBadge.verified('Cadastrado')
+                      : const _StatusBadge.pending('Não cadastrado'),
                 ],
               ),
             ],
@@ -79,10 +93,40 @@ class RegistrationView extends StatelessWidget {
   }
 }
 
+class _ErrorView extends StatelessWidget {
+  final String? message;
+  final VoidCallback onRetry;
+
+  const _ErrorView({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message ?? 'Não foi possível carregar seus dados.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: onRetry,
+              child: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _AccountInfoCard extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String value;
+  final String? value;
   final List<Widget> badges;
 
   const _AccountInfoCard({
@@ -96,50 +140,49 @@ class _AccountInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final hasValue = value != null && value!.isNotEmpty;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: colorScheme.onPrimaryContainer, size: 22),
+    return NeumorphicSurface(
+      padding: const EdgeInsets.all(16),
+      borderRadius: BorderRadius.circular(18),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+            child: Icon(icon, color: colorScheme.onPrimaryContainer, size: 22),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  hasValue ? value! : 'Não cadastrado',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                  if (badges.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Wrap(spacing: 8, runSpacing: 8, children: badges),
-                  ],
+                ),
+                if (badges.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(spacing: 8, runSpacing: 8, children: badges),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

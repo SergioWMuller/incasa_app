@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/auth/cubit/auth_cubit.dart';
 import 'package:incasa_app/features/auth/cubit/auth_state.dart';
 import 'package:incasa_app/features/profile/widgets/profile_menu_widget.dart';
@@ -22,18 +23,21 @@ class ProfileAuthWidget extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey[300],
+              NeumorphicSurface(
+                constraints: const BoxConstraints.tightFor(
+                  width: 100,
+                  height: 100,
                 ),
-                child: const Icon(Icons.person, size: 50),
+                borderRadius: BorderRadius.circular(50),
+                child: Icon(
+                  Icons.person,
+                  size: 50,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 32),
               Text(
-                'Bem-vindo ao InCasa',
+                'Bem-vindo ao inCasa',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -76,17 +80,24 @@ class ProfileAuthWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    border: Border.all(color: Colors.red),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red),
+                      Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         authState.errorMessage ?? 'Erro desconhecido',
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],

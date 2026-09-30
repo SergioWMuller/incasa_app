@@ -18,8 +18,8 @@ class MyStoreLocalDataSourceImpl implements MyStoreLocalDataSource {
   // Mock da loja do usuário (por enquanto)
   final Map<String, dynamic> _mockStore = {
     "id": "store001",
-    "name": "Minha Loja de Móveis",
-    "description": "Móveis artesanais de qualidade",
+    "name": "Loja do Sergio",
+    "description": "Produtos tradicionas da Alemanha",
     "ownerId": "user001",
     "imageUrl": "https://via.placeholder.com/300",
     "isActive": true,

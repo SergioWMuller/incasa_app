@@ -13,11 +13,11 @@ class NeighborsCarouselWidget extends StatelessWidget {
     final theme = Theme.of(context);
 
     return SizedBox(
-      height: 96,
+      height: 104,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: neighbors.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        separatorBuilder: (_, _) => const SizedBox(width: 16),
         itemBuilder: (context, index) {
           final neighbor = neighbors[index];
           return Column(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/constants/br_states_constants.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/address/cubit/address_cubit.dart';
 import 'package:incasa_app/features/address/cubit/address_state.dart';
 import 'package:incasa_app/domain/entities/profile/address.dart';
@@ -69,17 +70,16 @@ class AddressView extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     Center(
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withAlpha(25),
-                          shape: BoxShape.circle,
+                      child: NeumorphicSurface(
+                        constraints: const BoxConstraints.tightFor(
+                          width: 80,
+                          height: 80,
                         ),
+                        borderRadius: BorderRadius.circular(40),
                         child: Icon(
                           Icons.location_on,
                           size: 40,
-                          color: Theme.of(context).primaryColor,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),

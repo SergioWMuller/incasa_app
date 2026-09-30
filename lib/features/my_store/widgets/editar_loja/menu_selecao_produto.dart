@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/core/utils/id_generator.dart';
 import 'package:incasa_app/domain/entities/marketplace/product.dart';
 import 'package:incasa_app/domain/entities/my_store/grid_node.dart';
@@ -71,9 +72,9 @@ class _ItemMenuProduto extends StatelessWidget {
   Widget build(BuildContext context) {
     final primeiraPalavra = produto.name.trim().split(RegExp(r'\s+')).first;
 
-    return InkWell(
+    return NeumorphicSurface(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -84,7 +85,7 @@ class _ItemMenuProduto extends StatelessWidget {
                 produto.imageUrl,
                 fit: BoxFit.cover,
                 width: double.infinity,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   color: Colors.grey[300],
                   child: const Icon(Icons.image_not_supported),
                 ),

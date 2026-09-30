@@ -5,7 +5,8 @@ version: 0.1.0
 
 environment:
   sdk: ^3.9.0
-
+  # as bibliotecas comentadas aqui abaixo são para caso seja necessário fazer downgrade de alguma biblioteca.
+  # data 21/09/26 após confirmar que a lib não teve erro, pode apagar as respectivas linhas comentadas.
 dependencies:
   flutter:
     sdk: flutter

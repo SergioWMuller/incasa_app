@@ -1,5 +1,16 @@
 # EditarLojaView — Especificação técnica
 
+> **STATUS (2026-09-22): PAUSADA.** O app passou a ter 2 variantes de "Minha
+> Loja": (1) esta tela de grid customizável (`EditarLojaView`/`EditarLojaCubit`,
+> descrita abaixo) e (2) a vitrine padrão nova, simples e com visual moderno
+> (`MyStoreShowcaseTab`, em `lib/features/my_store/widgets/showcase/`), que é
+> a usada de fato no MVP. Esta feature (a customizável) **permanece no
+> código**, funcional e implementada conforme a spec abaixo, mas foi
+> **desconectada do fluxo principal** — não há mais nenhum botão/rota que
+> leve o usuário até ela (o gatilho temporário que existia em
+> `my_store_loaded_widget.dart` foi removido). Não retome o trabalho nela a
+> menos que o usuário peça explicitamente.
+>
 > Este documento especifica a feature de tela customizável do inCasa: o usuário monta o layout visual da própria loja arrastando, redimensionando e organizando blocos numa grade. Serve como fonte de verdade para a implementação via Claude Code. Não contém código de exemplo pronto — contém contratos, regras e comportamentos que o código deve satisfazer.
 
 ---

@@ -8,10 +8,11 @@ import 'package:incasa_app/core/widgets/app_shell.dart';
 import 'package:incasa_app/core/theme/app_theme.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'firebase_options.dart';
-  
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -24,6 +25,10 @@ void main() async {
 
   // Inicializa Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Sem isso, o Firebase manda SMS/e-mails de auth em inglês por padrão
+  // (X-Firebase-Locale fica null).
+  await FirebaseAuth.instance.setLanguageCode('pt-BR');
 
   // Inicializa Supabase.
   //
@@ -56,7 +61,7 @@ class InCasaApp extends StatelessWidget {
       child: BlocBuilder<ThemeCubit, ThemeState>(
         builder: (context, themeState) {
           return MaterialApp(
-            title: 'InCasa App',
+            title: 'inCasa App',
             theme: AppTheme.lightTheme(themeState.color),
             darkTheme: AppTheme.darkTheme(themeState.color),
             themeMode: _getThemeMode(themeState.mode),

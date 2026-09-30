@@ -44,6 +44,11 @@ components:
       in: header
       name: apikey
       description: Supabase anon key
+    supabaseJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT do Supabase emitido pela Edge Function `auth-firebase` (`supabase_jwt`, role authenticated)
 
   # -------------------------------------------------------------------------
   # Schemas reutilizáveis
@@ -743,6 +748,112 @@ paths:
                   value:
                     code: "P0001"
                     message: "Chave de PII (app.pii_key) não configurada no banco."
+                    hint: null
+
+  # ==========================================================================
+  # RPC — get_registration_info
+  # ==========================================================================
+  /rest/v1/rpc/get_registration_info:
+    post:
+      tags:
+        - "02 · Onboarding"
+      summary: Dados cadastrais do usuário (tela "Dados da Conta")
+      description: |
+        Retorna e-mail, telefone principal e CPF do usuário autenticado.
+
+        O banco identifica o usuário pelo token (`app_user_id()`) —
+        **não é necessário e nem possível** passar `user_id` no body.
+
+        - `email` e `phone` vêm **completos** (dados do próprio usuário).
+        - `cpf` vem **sempre mascarado pelo banco** (`123.***.**9-12`); o CPF
+          em texto puro nunca sai do Postgres.
+        - Cada campo é `null` quando o usuário ainda não o cadastrou.
+
+        Exige o **JWT do Supabase** (`role = authenticated`). Negado para `anon`.
+      security:
+        - anonKey: []
+          supabaseJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Sem parâmetros — enviar `{}`
+              additionalProperties: false
+            examples:
+              vazio:
+                summary: Corpo vazio
+                value: {}
+      responses:
+        "200":
+          description: Dados cadastrais
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                    nullable: true
+                    example: "maria@gmail.com"
+                  phone:
+                    type: object
+                    nullable: true
+                    properties:
+                      country_code: { type: string, example: "55" }
+                      area_code: { type: string, nullable: true, example: "41" }
+                      number: { type: string, example: "998123489" }
+                      full_number: { type: string, nullable: true, example: "5541998123489" }
+                      has_whatsapp: { type: boolean, example: true }
+                      is_verified: { type: boolean, example: false }
+                  cpf:
+                    type: string
+                    nullable: true
+                    description: "Sempre mascarado pelo banco"
+                    example: "123.***.**9-12"
+              examples:
+                completo:
+                  summary: Tudo cadastrado
+                  value:
+                    email: "maria@gmail.com"
+                    phone:
+                      country_code: "55"
+                      area_code: "41"
+                      number: "998123489"
+                      full_number: "5541998123489"
+                      has_whatsapp: true
+                      is_verified: false
+                    cpf: "123.***.**9-12"
+                onboarding_incompleto:
+                  summary: Só o e-mail (ainda sem telefone e CPF)
+                  value:
+                    email: "maria@gmail.com"
+                    phone: null
+                    cpf: null
+        "400":
+          description: Usuário não identificado ou chave PII ausente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPostgrest'
+              examples:
+                sem_identidade:
+                  value:
+                    code: "P0001"
+                    message: "Usuário não identificado (token ausente ou inválido)."
+                    hint: null
+        "401":
+          description: Sem JWT do Supabase (`anon`) — permission denied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPostgrest'
+              examples:
+                anon:
+                  value:
+                    code: "42501"
+                    message: "permission denied for function get_registration_info"
                     hint: null
 
   # ==========================================================================

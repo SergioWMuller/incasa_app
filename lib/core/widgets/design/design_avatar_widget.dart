@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 
 /// Avatar circular com inicial; opcionalmente com anel gradiente
 /// (carrossel "Vizinhos vendendo hoje" do design handoff).
@@ -31,26 +32,16 @@ class DesignAvatarWidget extends StatelessWidget {
       ),
     );
 
-    if (!withRing) return avatar;
-
-    return Container(
-      padding: const EdgeInsets.all(2.5),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [colorScheme.tertiary, colorScheme.primary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+    final padding = withRing ? 3.0 : 0.0;
+    return NeumorphicSurface(
+      constraints: BoxConstraints.tightFor(
+        width: size + padding * 2,
+        height: size + padding * 2,
       ),
-      child: Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: colorScheme.surface,
-        ),
-        child: avatar,
-      ),
+      padding: EdgeInsets.all(padding),
+      borderRadius: BorderRadius.circular(size),
+      depth: withRing ? 5 : 3,
+      child: avatar,
     );
   }
 }

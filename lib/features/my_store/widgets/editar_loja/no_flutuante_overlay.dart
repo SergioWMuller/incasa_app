@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/my_store/cubit/editar_loja_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/editar_loja_state.dart';
 import 'grid_node_widget.dart';
@@ -29,19 +30,17 @@ class NoFlutuanteOverlay extends StatelessWidget {
       width: flutuante.w * unidade,
       height: flutuante.h * unidade,
       child: GestureDetector(
-        onPanUpdate: (details) => cubit.moverNoFlutuantePorDelta(
-          details.delta.dx,
-          details.delta.dy,
-        ),
+        onPanUpdate: (details) =>
+            cubit.moverNoFlutuantePorDelta(details.delta.dx, details.delta.dy),
         onPanEnd: (_) => cubit.confirmarPosicionamentoDoNoFlutuante(),
         child: Opacity(
           opacity: 0.85,
           child: DecoratedBox(
-            decoration: BoxDecoration(
+            decoration: neumorphicDecoration(
+              context,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: const [
-                BoxShadow(color: Colors.black38, blurRadius: 12),
-              ],
+              color: Theme.of(context).colorScheme.surface,
+              depth: 7,
             ),
             child: GridNodeWidget(
               node: flutuante,

@@ -12,7 +12,7 @@ class AuthService {
   // ⚠️ serverClientId = Web Client ID do Firebase (não o Android)
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     serverClientId:
-        '289817032686-cakro7a1lgfqo6depe2500h5bdnejo71.apps.googleusercontent.com',
+        '899647823112-0mhvssudvtf92vja0j2i2b0jld7g1nf8.apps.googleusercontent.com',
   );
 
   // DioClient apontando para a base de Edge Functions configurada no .env
@@ -47,10 +47,6 @@ class AuthService {
 
       final idToken = googleAuth.idToken;
       log('✅ [AUTH] Passo 2 OK');
-      log(
-        '   - idToken: ${idToken != null ? '${idToken.substring(0, 20)}...' : 'NULL ⚠️'}',
-      );
-      log('   - accessToken: ${googleAuth.accessToken?.substring(0, 20)}...');
 
       if (idToken == null) {
         log('🔴 [AUTH] idToken é null — verifique o serverClientId');
@@ -82,9 +78,6 @@ class AuthService {
         );
       }
       log('✅ [AUTH] Passo 3 OK');
-      log('   - Firebase UID: ${firebaseUser.uid}');
-      log('   - Email: ${firebaseUser.email}');
-      log('   - Display Name: ${firebaseUser.displayName}');
 
       // PASSO 4: Pegar Firebase idToken (assinado pelo Firebase, não pelo Google)
       log('🔵 [AUTH] Passo 4: Obtendo Firebase idToken...');
@@ -117,7 +110,7 @@ class AuthService {
         supabaseSaved = false;
         authMessage =
             'Login realizado, mas erro ao sincronizar com Supabase: $e';
-        log('⚠️ [AUTH] Passo 5 com falha não bloqueante: $e');
+        log('⚠️ [AUTH] Passo 5 com falha não bloqueante (${e.runtimeType})');
       }
 
       // JWT do Supabase emitido pela Edge Function (quando já implementado no
@@ -136,7 +129,6 @@ class AuthService {
       );
     } catch (e) {
       log('🔴 [AUTH] ========== LOGIN GOOGLE ERRO! ==========');
-      log('🔴 [AUTH] Erro: $e');
       log('🔴 [AUTH] Tipo: ${e.runtimeType}');
       return AuthResult(
         userCredential: null,
@@ -162,7 +154,7 @@ class AuthService {
       final edgeResult = await _callAuthEdgeFunction(firebaseIdToken: idToken);
       return _extractSupabaseToken(edgeResult);
     } catch (e) {
-      log('⚠️ [AUTH] Falha ao renovar JWT do Supabase: $e');
+      log('⚠️ [AUTH] Falha ao renovar JWT do Supabase (${e.runtimeType})');
       return null;
     }
   }
@@ -203,24 +195,22 @@ class AuthService {
       );
 
       log('🟡 [EDGE] Status: ${response.statusCode}');
-      log('🟡 [EDGE] Body: ${response.data}');
 
       final data = response.data as Map<String, dynamic>;
 
       if (data['success'] != true) {
-        throw Exception('Edge Function falhou: ${data['error']}');
+        throw Exception('A Edge Function recusou a autenticação.');
       }
 
       return data;
     } on DioException catch (e) {
-      log(
-        '🔴 [EDGE] DioException: ${e.response?.statusCode} — ${e.response?.data}',
-      );
+      final statusCode = e.response?.statusCode;
+      log('🔴 [EDGE] Falha HTTP (${statusCode ?? 'sem resposta'})');
       throw Exception(
-        'Erro na Edge Function: ${e.response?.data ?? e.message}',
+        'Erro ao comunicar com a Edge Function (${statusCode ?? 'sem resposta'}).',
       );
     } catch (e) {
-      log('🔴 [EDGE] Erro: $e');
+      log('🔴 [EDGE] Erro (${e.runtimeType})');
       rethrow;
     }
   }

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:developer';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -47,7 +49,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           state.copyWith(
             phoneNumber: userData['phoneNumber'] as String?,
             phoneVerified: userData['phoneVerified'] as bool? ?? false,
-            phoneSaved: userData['phoneNumber'] != null,
+            phoneSaved:
+                userData['phoneNumber'] != null &&
+                (userData['phoneVerified'] as bool? ?? false),
             // Não guardamos o CPF (PII) localmente — apenas a flag de concluído.
             cpfSaved: userData['cpfSaved'] as bool? ?? false,
           ),
@@ -208,8 +212,12 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     }
   }
 
-  /// Envia código de verificação SMS para o telefone
-  Future<void> sendPhoneVerification(String phoneNumber) async {
+  /// Envia código de verificação SMS para o telefone.
+  /// Com [resend] = true reaproveita o `resendToken` do envio anterior.
+  Future<void> sendPhoneVerification(
+    String phoneNumber, {
+    bool resend = false,
+  }) async {
     try {
       emit(
         state.copyWith(
@@ -219,29 +227,22 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         ),
       );
 
+      log('🟡 [PHONE-AUTH] Solicitando envio de SMS para +55$phoneNumber (resend=$resend)');
       await FirebaseAuth.instance.verifyPhoneNumber(
         phoneNumber: '+55$phoneNumber', // Adiciona DDI do Brasil
         timeout: const Duration(seconds: 60),
+        forceResendingToken: resend ? state.resendToken : null,
         verificationCompleted: (PhoneAuthCredential credential) async {
-          // Auto-verificação (raro, acontece só em alguns dispositivos Android)
-          try {
-            await firebaseUser.linkWithCredential(credential);
-            final updatedUser = FirebaseAuth.instance.currentUser!;
-
-            await _persistPhone(
-              updatedUser.phoneNumber!,
-              verified: true,
-            );
-          } catch (e) {
-            emit(
-              state.copyWith(
-                isLoading: false,
-                errorMessage: 'Erro na verificação automática: $e',
-              ),
-            );
-          }
+          // Leitura automática do SMS (Android, via SMS Retriever) ou
+          // instant verification: dispensa a digitação do código.
+          if (isClosed) return;
+          log('🟢 [PHONE-AUTH] verificationCompleted (auto)');
+          emit(state.copyWith(isLoading: true, errorMessage: null));
+          await _linkCredentialAndPersistPhone(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
+          if (isClosed) return;
+          log('🔴 [PHONE-AUTH] code=${e.code} message=${e.message}');
           String errorMsg = 'Erro ao enviar SMS';
 
           if (e.code == 'invalid-phone-number') {
@@ -263,18 +264,28 @@ class OnboardingCubit extends Cubit<OnboardingState> {
           emit(state.copyWith(isLoading: false, errorMessage: errorMsg));
         },
         codeSent: (String verificationId, int? resendToken) {
+          if (isClosed) return;
+          log('🟢 [PHONE-AUTH] codeSent: Firebase aceitou o envio (verificationId=$verificationId)');
           // Código enviado com sucesso - salva verificationId
           emit(
             state.copyWith(
               isLoading: false,
               verificationId: verificationId,
+              resendToken: resendToken,
+              phoneCodeSent: true,
               errorMessage: null,
             ),
           );
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          // Timeout - pode atualizar UI se necessário
-          emit(state.copyWith(verificationId: verificationId));
+          if (isClosed) return;
+          // Timeout da leitura automática: o código ainda vale, digitação manual.
+          emit(
+            state.copyWith(
+              verificationId: verificationId,
+              errorMessage: state.errorMessage,
+            ),
+          );
         },
       );
     } catch (e) {
@@ -282,7 +293,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
         state.copyWith(
           isLoading: false,
           errorMessage:
-              'Erro ao enviar código SMS. Você pode pular esta etapa.',
+              'Erro ao enviar código SMS. Tente novamente.',
         ),
       );
     }
@@ -290,34 +301,42 @@ class OnboardingCubit extends Cubit<OnboardingState> {
 
   /// Verifica o código SMS e vincula telefone à conta Google
   Future<void> verifyPhoneCode(String code) async {
+    emit(state.copyWith(isLoading: true, errorMessage: null));
+
+    if (state.verificationId == null) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: 'Erro: código de verificação não encontrado',
+        ),
+      );
+      return;
+    }
+
+    // Cria credential com o código SMS
+    final credential = PhoneAuthProvider.credential(
+      verificationId: state.verificationId!,
+      smsCode: code,
+    );
+
+    await _linkCredentialAndPersistPhone(credential);
+  }
+
+  /// Vincula a credencial telefônica à conta Google existente (não faz
+  /// login) e persiste o telefone em `phones`. Compartilhado pela
+  /// verificação automática (`verificationCompleted` — SMS Retriever/instant
+  /// verification) e pela verificação manual ([verifyPhoneCode] — código
+  /// digitado pelo usuário), para que ambos os caminhos tratem os mesmos
+  /// erros do Firebase Phone Auth.
+  Future<void> _linkCredentialAndPersistPhone(
+    PhoneAuthCredential credential,
+  ) async {
     try {
-      emit(state.copyWith(isLoading: true, errorMessage: null));
-
-      if (state.verificationId == null) {
-        emit(
-          state.copyWith(
-            isLoading: false,
-            errorMessage: 'Erro: código de verificação não encontrado',
-          ),
-        );
-        return;
-      }
-
-      // Cria credential com o código SMS
-      final credential = PhoneAuthProvider.credential(
-        verificationId: state.verificationId!,
-        smsCode: code,
-      );
-
-      // Vincula o telefone à conta Google existente (não faz login)
       final userCredential = await firebaseUser.linkWithCredential(credential);
-      final updatedUser = userCredential.user!;
-
-      await _persistPhone(
-        updatedUser.phoneNumber!,
-        verified: true,
-      );
+      await _logFirebasePhoneResult(userCredential: userCredential);
+      await _persistPhone(userCredential.user!.phoneNumber!, verified: true);
     } on FirebaseAuthException catch (e) {
+      if (isClosed) return;
       String errorMsg = 'Código inválido';
 
       if (e.code == 'invalid-verification-code') {
@@ -327,17 +346,99 @@ class OnboardingCubit extends Cubit<OnboardingState> {
       } else if (e.code == 'credential-already-in-use') {
         errorMsg = 'Este número já está vinculado a outra conta.';
       } else if (e.code == 'provider-already-linked') {
-        errorMsg = 'Você já tem um telefone vinculado. Remova-o primeiro.';
+        // Telefone já vinculado no Firebase (ex.: falha ao gravar em `phones`
+        // numa tentativa anterior): só conclui a persistência.
+        final linked = FirebaseAuth.instance.currentUser?.phoneNumber;
+        await _logFirebasePhoneResult(
+          fallbackUser: FirebaseAuth.instance.currentUser,
+        );
+        if (linked != null) {
+          try {
+            await _persistPhone(linked, verified: true);
+            return;
+          } catch (_) {
+            errorMsg = 'Erro ao salvar telefone. Tente novamente.';
+          }
+        } else {
+          errorMsg = 'Você já tem um telefone vinculado. Remova-o primeiro.';
+        }
       }
 
       emit(state.copyWith(isLoading: false, errorMessage: errorMsg));
     } catch (e) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           isLoading: false,
           errorMessage: 'Erro ao verificar código: $e',
         ),
       );
+    }
+  }
+
+  /// DEBUG: mostra o que o Firebase devolve quando o SMS é validado e o
+  /// telefone é vinculado à conta (para estudar a sincronização com o banco).
+  ///
+  /// Só roda em debug e **nunca imprime o ID token cru** — apenas os claims já
+  /// decodificados (`phone_number`, `firebase.identities`...). Remover quando o
+  /// estudo terminar.
+  Future<void> _logFirebasePhoneResult({
+    UserCredential? userCredential,
+    User? fallbackUser,
+  }) async {
+    if (!kDebugMode) return;
+    try {
+      final user = userCredential?.user ?? fallbackUser;
+      if (user == null) return;
+
+      // Força renovação: só os tokens emitidos DEPOIS do vínculo trazem o
+      // claim `phone_number`.
+      final token = await user.getIdTokenResult(true);
+      final info = userCredential?.additionalUserInfo;
+
+      final data = {
+        'credential': {
+          'providerId': userCredential?.credential?.providerId,
+          'signInMethod': userCredential?.credential?.signInMethod,
+        },
+        'additionalUserInfo': {
+          'isNewUser': info?.isNewUser,
+          'providerId': info?.providerId,
+          'profileKeys': info?.profile?.keys.toList(),
+        },
+        'user': {
+          'uid': user.uid,
+          'phoneNumber': user.phoneNumber,
+          'email': user.email,
+          'emailVerified': user.emailVerified,
+          'providerData': [
+            for (final p in user.providerData)
+              {
+                'providerId': p.providerId,
+                'uid': p.uid,
+                'phoneNumber': p.phoneNumber,
+                'email': p.email,
+              },
+          ],
+        },
+        'idTokenResult': {
+          'signInProvider': token.signInProvider,
+          'authTime': token.authTime?.toIso8601String(),
+          'issuedAtTime': token.issuedAtTime?.toIso8601String(),
+          'expirationTime': token.expirationTime?.toIso8601String(),
+          'claims': token.claims,
+        },
+      };
+
+      log(
+        JsonEncoder.withIndent(
+          '  ',
+          (o) => o.toString(),
+        ).convert(data),
+        name: 'FIREBASE-PHONE',
+      );
+    } catch (e) {
+      log('Falha ao logar retorno do Firebase: $e', name: 'FIREBASE-PHONE');
     }
   }
 
@@ -356,20 +457,9 @@ class OnboardingCubit extends Cubit<OnboardingState> {
     emit(state.copyWith(cpfSaved: false));
   }
 
-  /// Salva telefone sem verificação (modo padrão)
-  Future<void> savePhoneWithoutVerification(String phoneNumber) async {
-    try {
-      emit(state.copyWith(isLoading: true, errorMessage: null));
-
-      await _persistPhone(phoneNumber, verified: false);
-    } catch (e) {
-      emit(
-        state.copyWith(
-          isLoading: false,
-          errorMessage: 'Erro ao salvar telefone: $e',
-        ),
-      );
-    }
+  /// Volta para a digitação do número (ex.: número errado ou SMS não chegou).
+  void changePhoneNumber() {
+    emit(state.copyWith(phoneCodeSent: false, errorMessage: null));
   }
 
   /// Fluxo único de persistência do telefone:

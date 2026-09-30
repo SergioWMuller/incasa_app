@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:incasa_app/core/widgets/design/design_format.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/domain/entities/design/order_agreement.dart';
 
 /// Bloco do "combinado" fixado no topo da conversa (tela 05 do handoff)
@@ -12,10 +13,10 @@ class ChatAgreementWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      width: double.infinity,
+    return NeumorphicSurface(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(12),
-      color: theme.colorScheme.secondaryContainer,
+      borderRadius: BorderRadius.circular(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -27,7 +28,7 @@ class ChatAgreementWidget extends StatelessWidget {
                   '${DesignFormat.price(agreement.price)}',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSecondaryContainer,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -55,7 +56,7 @@ class ChatAgreementWidget extends StatelessWidget {
           Text(
             'LOCAL · ${agreement.placeLabel}     ${agreement.timeLabel}',
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSecondaryContainer,
+              color: theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.4,
             ),

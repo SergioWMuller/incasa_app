@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/domain/entities/marketplace/product.dart';
 import 'package:incasa_app/domain/entities/my_store/grid_node.dart';
 import 'package:incasa_app/domain/entities/my_store/resize_axis.dart';
@@ -49,13 +50,17 @@ class ItemNodeWidget extends StatelessWidget {
             // toda a célula) e se destaque como o bloco "folha" da árvore.
             padding: const EdgeInsets.all(5),
             child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-              ),
+              decoration:
+                  neumorphicDecoration(
+                    context,
+                    borderRadius: BorderRadius.circular(12),
+                    color: Theme.of(context).colorScheme.surface,
+                    depth: 2,
+                  ).copyWith(
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
               clipBehavior: Clip.antiAlias,
               child: produto == null
                   ? const Center(
@@ -69,9 +74,16 @@ class ItemNodeWidget extends StatelessWidget {
                           child: Image.network(
                             produto.imageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.image_not_supported),
+                            errorBuilder: (_, _, _) => Container(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:incasa_app/features/onboarding/utils/onboarding_spacing.dart';
 
@@ -25,21 +26,18 @@ class WelcomeStep extends StatelessWidget {
             curve: Curves.easeOutBack,
             builder: (context, value, child) =>
                 Transform.scale(scale: value, child: child),
-            child: Container(
-              width: context.onboardingIconDiameter * 1.2,
-              height: context.onboardingIconDiameter * 1.2,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [theme.primaryColor, theme.colorScheme.tertiary],
-                ),
-                shape: BoxShape.circle,
+            child: NeumorphicSurface(
+              constraints: BoxConstraints.tightFor(
+                width: context.onboardingIconDiameter * 1.2,
+                height: context.onboardingIconDiameter * 1.2,
+              ),
+              borderRadius: BorderRadius.circular(
+                context.onboardingIconDiameter,
               ),
               child: Icon(
                 Icons.waving_hand_rounded,
                 size: context.onboardingIconDiameter * 0.6,
-                color: Colors.white,
+                color: theme.colorScheme.primary,
               ),
             ),
           ),

@@ -50,20 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC1tWtrc4g5qYeb-YPA2Ns63wS4VXj9u_0',
-    appId: '1:289817032686:android:f422f31bd0d31eead1c0ff',
-    messagingSenderId: '289817032686',
-    projectId: 'incasa-f0d5a',
-    storageBucket: 'incasa-f0d5a.firebasestorage.app',
+    apiKey: 'AIzaSyCvFBL_AXS7oBd2OYQsH8EPMvfxDo7WwIU',
+    appId: '1:899647823112:android:ea14637169dd6abc4d60bd',
+    messagingSenderId: '899647823112',
+    projectId: 'incasa-app-auth-321',
+    storageBucket: 'incasa-app-auth-321.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCK4p-3WBYkQnpRf_xk6RBsgu4Xal63_tA',
-    appId: '1:289817032686:ios:f79f9d9849bb717dd1c0ff',
-    messagingSenderId: '289817032686',
-    projectId: 'incasa-f0d5a',
-    storageBucket: 'incasa-f0d5a.firebasestorage.app',
-    iosClientId:
-        '289817032686-7bnej8627d58qs5kafa6so05meoi2oht.apps.googleusercontent.com',
+    apiKey: 'AIzaSyD0Z7XQ5ounsN6e5s4sdQitw3Z517i8Ms0',
+    appId: '1:899647823112:ios:8976be19fa1e59da4d60bd',
+    messagingSenderId: '899647823112',
+    projectId: 'incasa-app-auth-321',
+    storageBucket: 'incasa-app-auth-321.firebasestorage.app',
+    iosClientId: '899647823112-2lumlrqoh22fvrmpn22353k4tdck7h3q.apps.googleusercontent.com',
+    iosBundleId: 'br.app.incasa.projetoIncasaApp',
   );
 }
