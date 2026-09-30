@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_state.dart';
 import 'package:incasa_app/features/onboarding/utils/onboarding_spacing.dart';
@@ -22,23 +23,20 @@ class EmailVerificationStep extends StatelessWidget {
 
               // Ícone
               Center(
-                child: Container(
-                  width: context.onboardingIconDiameter,
-                  height: context.onboardingIconDiameter,
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+                child: NeumorphicSurface(
+                  constraints: BoxConstraints.tightFor(
+                    width: context.onboardingIconDiameter,
+                    height: context.onboardingIconDiameter,
+                  ),
+                  borderRadius: BorderRadius.circular(
+                    context.onboardingIconDiameter,
                   ),
                   child: Icon(
                     state.emailVerified
                         ? Icons.check_circle
                         : Icons.email_outlined,
                     size: context.onboardingIconDiameter * 0.5,
-                    color: state.emailVerified
-                        ? Theme.of(context).colorScheme.tertiary
-                        : Theme.of(context).primaryColor,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -60,18 +58,13 @@ class EmailVerificationStep extends StatelessWidget {
               if (state.email != null) ...[
                 SizedBox(height: context.onboardingSpacingMedium),
                 Center(
-                  child: Container(
+                  child: NeumorphicSurface(
                     padding: EdgeInsets.symmetric(
                       horizontal: context.onboardingSpacingMedium,
                       vertical: context.onboardingSpacingSmall,
                     ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(
-                        context.onboardingBorderRadius,
-                      ),
+                    borderRadius: BorderRadius.circular(
+                      context.onboardingBorderRadius,
                     ),
                     child: Text(
                       state.email!,
@@ -132,7 +125,6 @@ class EmailVerificationStep extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-
 
               const Spacer(),
 

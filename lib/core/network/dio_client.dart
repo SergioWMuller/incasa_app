@@ -16,17 +16,6 @@ class DioClient {
       ),
     );
 
-    // Interceptors para logging (útil em desenvolvimento)
-    _dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: true,
-        responseBody: true,
-        error: true,
-      ),
-    );
   }
 
   // GET Request

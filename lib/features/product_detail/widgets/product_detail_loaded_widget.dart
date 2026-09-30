@@ -4,6 +4,7 @@ import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/core/widgets/design/design_avatar_widget.dart';
 import 'package:incasa_app/core/widgets/design/design_format.dart';
 import 'package:incasa_app/core/widgets/design/design_thumb_widget.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/chat/cubit/chat_cubit.dart';
 import 'package:incasa_app/features/chat/view/chat_conversation_view.dart';
 import 'package:incasa_app/features/checkout/view/pix_sheet_widget.dart';
@@ -20,9 +21,9 @@ class ProductDetailLoadedWidget extends StatelessWidget {
 
   void _openChat(BuildContext context) {
     sl<ChatCubit>().openThread('thread-bel');
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const ChatConversationView()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ChatConversationView()));
   }
 
   void _openStore(BuildContext context) {
@@ -146,7 +147,8 @@ class ProductDetailLoadedWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     // Card do vendedor
-                    Card(
+                    NeumorphicSurface(
+                      borderRadius: BorderRadius.circular(16),
                       child: ListTile(
                         leading: DesignAvatarWidget(
                           name: product.sellerName,
@@ -187,7 +189,10 @@ class ProductDetailLoadedWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(product.description, style: theme.textTheme.bodyMedium),
+                    Text(
+                      product.description,
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   ],
                 ),
               ),

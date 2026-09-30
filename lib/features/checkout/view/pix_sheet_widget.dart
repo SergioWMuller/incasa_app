@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/core/widgets/design/design_avatar_widget.dart';
 import 'package:incasa_app/core/widgets/design/design_format.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/domain/entities/design/home_product.dart';
 import 'package:incasa_app/features/chat/cubit/chat_cubit.dart';
 import 'package:incasa_app/features/chat/view/chat_conversation_view.dart';
@@ -79,13 +80,12 @@ class PixSheetWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 // QR code placeholder
-                Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: theme.colorScheme.outlineVariant),
-                    borderRadius: BorderRadius.circular(12),
+                NeumorphicSurface(
+                  constraints: const BoxConstraints.tightFor(
+                    width: 150,
+                    height: 150,
                   ),
+                  borderRadius: BorderRadius.circular(16),
                   child: Icon(
                     Icons.qr_code_2,
                     size: 120,
@@ -94,19 +94,15 @@ class PixSheetWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 // Código copia-e-cola
-                InkWell(
+                NeumorphicSurface(
                   onTap: () => context.read<PixCubit>().copyCode(),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  child: SizedBox(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
                     child: Row(
                       children: [
                         Expanded(

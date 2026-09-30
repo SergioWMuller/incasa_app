@@ -2,6 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:incasa_app/core/network/supabase_client.dart';
 import 'package:incasa_app/core/network/dio_client.dart';
+import 'package:incasa_app/core/network/supabase_rest_dio.dart';
+import 'package:incasa_app/core/network/supabase_session.dart';
+import 'package:incasa_app/core/constants/supabase_constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,18 +25,21 @@ import 'package:incasa_app/data/datasources/remote/profile_remote_data_source.da
 import 'package:incasa_app/data/datasources/remote/user_supabase_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/phone_supabase_data_source.dart';
 import 'package:incasa_app/data/datasources/remote/address_supabase_data_source.dart';
+import 'package:incasa_app/data/datasources/remote/registration_supabase_data_source.dart';
 import 'package:incasa_app/data/repositories/marketplace/marketplace_repository_impl.dart';
 import 'package:incasa_app/data/repositories/my_store/my_store_repository_impl.dart';
 import 'package:incasa_app/data/repositories/my_store/layout_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/profile_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/theme_repository_impl.dart';
 import 'package:incasa_app/data/repositories/profile/address_repository_impl.dart';
+import 'package:incasa_app/data/repositories/profile/registration_repository_impl.dart';
 import 'package:incasa_app/domain/repositories/marketplace/marketplace_repository.dart';
 import 'package:incasa_app/domain/repositories/my_store/my_store_repository.dart';
 import 'package:incasa_app/domain/repositories/my_store/layout_repository.dart';
 import 'package:incasa_app/domain/repositories/profile/profile_repository.dart';
 import 'package:incasa_app/domain/repositories/profile/theme_repository.dart';
 import 'package:incasa_app/domain/repositories/profile/address_repository.dart';
+import 'package:incasa_app/domain/repositories/profile/registration_repository.dart';
 import 'package:incasa_app/domain/usecases/marketplace/get_categories.dart';
 import 'package:incasa_app/domain/usecases/marketplace/get_products.dart';
 import 'package:incasa_app/domain/usecases/marketplace/search_products.dart';
@@ -45,6 +51,7 @@ import 'package:incasa_app/domain/usecases/my_store/save_store_layout.dart';
 import 'package:incasa_app/domain/usecases/profile/get_theme_mode.dart';
 import 'package:incasa_app/domain/usecases/profile/get_theme_color.dart';
 import 'package:incasa_app/domain/usecases/profile/get_user_profile.dart';
+import 'package:incasa_app/domain/usecases/profile/get_registration_info.dart';
 import 'package:incasa_app/domain/usecases/profile/save_theme_mode.dart';
 import 'package:incasa_app/domain/usecases/profile/save_theme_color.dart';
 import 'package:incasa_app/features/marketplace/cubit/marketplace_cubit.dart';
@@ -52,6 +59,7 @@ import 'package:incasa_app/features/my_store/cubit/my_store_cubit.dart';
 import 'package:incasa_app/features/my_store/cubit/editar_loja_cubit.dart';
 import 'package:incasa_app/features/profile/cubit/profile_cubit.dart';
 import 'package:incasa_app/features/address/cubit/address_cubit.dart';
+import 'package:incasa_app/features/onboarding/cubit/registration_cubit.dart';
 import 'package:incasa_app/core/shell/app_shell_cubit.dart';
 import 'package:incasa_app/data/datasources/local/design_mock_data_source.dart';
 import 'package:incasa_app/features/chat/cubit/chat_cubit.dart';
@@ -93,6 +101,17 @@ Future<void> initializeDependencies() async {
         },
       ),
     ),
+  );
+
+  // Dio do REST/RPC do Supabase (<SUPABASE_URL>/rest/v1) — padrão para novas
+  // chamadas à API. Envia `apikey` + JWT do Supabase do usuário logado.
+  sl.registerLazySingleton<Dio>(
+    () => createSupabaseRestDio(
+      supabaseUrl: SupabaseConstants.supabaseUrl,
+      anonKey: SupabaseConstants.supabaseAnonKey,
+      accessToken: SupabaseSession.instance.validToken,
+    ),
+    instanceName: supabaseRestDioName,
   );
 
   sl.registerLazySingleton<AuthService>(() => AuthService());
@@ -167,6 +186,13 @@ Future<void> initializeDependencies() async {
     () => AddressSupabaseDataSourceImpl(supabase: sl()),
   );
 
+  // ============== Data Sources - Registration (Supabase RPC) ==============
+  sl.registerLazySingleton<RegistrationSupabaseDataSource>(
+    () => RegistrationSupabaseDataSourceImpl(
+      dio: sl<Dio>(instanceName: supabaseRestDioName),
+    ),
+  );
+
   // ============== Repositories - Marketplace ==============
   sl.registerLazySingleton<MarketplaceRepository>(
     () => MarketplaceRepositoryImpl(
@@ -201,6 +227,11 @@ Future<void> initializeDependencies() async {
     () => AddressRepositoryImpl(dataSource: sl()),
   );
 
+  // ============== Repositories - Registration ==============
+  sl.registerLazySingleton<RegistrationRepository>(
+    () => RegistrationRepositoryImpl(dataSource: sl()),
+  );
+
   // ============== Repositories - Theme ==============
   sl.registerLazySingleton<ThemeRepository>(() => ThemeRepositoryImpl(sl()));
 
@@ -219,6 +250,7 @@ Future<void> initializeDependencies() async {
 
   // ============== Use Cases - Profile ==============
   sl.registerFactory(() => GetUserProfile(sl()));
+  sl.registerFactory(() => GetRegistrationInfo(sl()));
 
   // ============== Use Cases - Theme ==============
   sl.registerFactory(() => GetThemeMode(sl()));
@@ -275,6 +307,13 @@ Future<void> initializeDependencies() async {
   // ============== Cubits - Address ==============
   // Factory pois cada tela de endereço é independente (formulário ou lista)
   sl.registerFactory(() => AddressCubit(sl(), sl(), sl(), sl()));
+
+  // ============== Cubits - Registration ==============
+  // Factory pois é uma tela empilhada (Configurações > Minha Conta) — cada
+  // abertura recarrega os dados.
+  sl.registerFactory(
+    () => RegistrationCubit(getRegistrationInfoUseCase: sl()),
+  );
 
   // ============== Cubits - EditarLoja ==============
   // Factory pois é uma tela empilhada (precedente: AddressCubit) — cada

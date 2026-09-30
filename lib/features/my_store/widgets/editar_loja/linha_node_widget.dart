@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/domain/entities/marketplace/product.dart';
 import 'package:incasa_app/domain/entities/my_store/grid_node.dart';
 import 'package:incasa_app/features/my_store/cubit/editar_loja_cubit.dart';
@@ -52,11 +53,17 @@ class LinhaNodeWidget extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: Theme.of(context).colorScheme.surfaceContainerHigh,
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-            ),
+            decoration:
+                neumorphicDecoration(
+                  context,
+                  borderRadius: BorderRadius.circular(12),
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  depth: 2,
+                ).copyWith(
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
             child: _construirConteudo(),
           ),
           if (itensExtras > 0)

@@ -1,28 +1,20 @@
 {
   "project_info": {
-    "project_number": "289817032686",
-    "project_id": "incasa-f0d5a",
-    "storage_bucket": "incasa-f0d5a.firebasestorage.app"
+    "project_number": "899647823112",
+    "project_id": "incasa-app-auth-321",
+    "storage_bucket": "incasa-app-auth-321.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:289817032686:android:f422f31bd0d31eead1c0ff",
+        "mobilesdk_app_id": "1:899647823112:android:ea14637169dd6abc4d60bd",
         "android_client_info": {
           "package_name": "br.app.incasa.projeto_incasa_app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "289817032686-07cc95duthu8ncqr01v1qep7k7vnh3qf.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "br.app.incasa.projeto_incasa_app",
-            "certificate_hash": "7ae189149b0da3a80703a009fc16e122ae63c8aa"
-          }
-        },
-        {
-          "client_id": "289817032686-5ptj31tc1s5e9smd5mdogp8ur6fh9s90.apps.googleusercontent.com",
+          "client_id": "899647823112-qfb2jsvd77cobrfpd0i07fd01inom41m.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "br.app.incasa.projeto_incasa_app",
@@ -30,32 +22,24 @@
           }
         },
         {
-          "client_id": "289817032686-sftg35qnc1okmmglec0v2rbcmov3l1ur.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "br.app.incasa.projeto_incasa_app",
-            "certificate_hash": "ea17e023c04c9f33d4598a6e66015caaffee2aaf"
-          }
-        },
-        {
-          "client_id": "289817032686-cakro7a1lgfqo6depe2500h5bdnejo71.apps.googleusercontent.com",
+          "client_id": "899647823112-0mhvssudvtf92vja0j2i2b0jld7g1nf8.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyC1tWtrc4g5qYeb-YPA2Ns63wS4VXj9u_0"
+          "current_key": "AIzaSyCvFBL_AXS7oBd2OYQsH8EPMvfxDo7WwIU"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "289817032686-cakro7a1lgfqo6depe2500h5bdnejo71.apps.googleusercontent.com",
+              "client_id": "899647823112-0mhvssudvtf92vja0j2i2b0jld7g1nf8.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "289817032686-7bnej8627d58qs5kafa6so05meoi2oht.apps.googleusercontent.com",
+              "client_id": "899647823112-2lumlrqoh22fvrmpn22353k4tdck7h3q.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "br.app.incasa.projetoIncasaApp"

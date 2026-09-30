@@ -75,7 +75,6 @@ class _ProgressIndicator extends StatelessWidget {
                 children: List.generate(totalSteps, (index) {
                   final isCompleted = index < currentIndex;
                   final isCurrent = index == currentIndex;
-
                   return Expanded(
                     child: Container(
                       margin: EdgeInsets.only(
@@ -90,7 +89,9 @@ class _ProgressIndicator extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isCompleted || isCurrent
                             ? Theme.of(context).primaryColor
-                            : Theme.of(context).colorScheme.surfaceVariant,
+                            : Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(
                           context.onboardingBorderRadius * 0.25,
                         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/core/utils/id_generator.dart';
 import 'package:incasa_app/domain/entities/my_store/grid_node.dart';
 import 'package:incasa_app/features/my_store/cubit/editar_loja_cubit.dart';
@@ -14,29 +15,35 @@ class EditarLojaBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          TextButton.icon(
-            onPressed: () => cubit.iniciarPosicionamentoDeNovoNo(
-              ColunaNode(id: gerarIdUnico(), x: 0, y: 0),
+      color: Colors.transparent,
+      elevation: 0,
+      child: NeumorphicSurface(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            TextButton.icon(
+              onPressed: () => cubit.iniciarPosicionamentoDeNovoNo(
+                ColunaNode(id: gerarIdUnico(), x: 0, y: 0),
+              ),
+              icon: const Icon(Icons.view_column_outlined),
+              label: const Text('Coluna'),
             ),
-            icon: const Icon(Icons.view_column_outlined),
-            label: const Text('Coluna'),
-          ),
-          TextButton.icon(
-            onPressed: () => cubit.iniciarPosicionamentoDeNovoNo(
-              LinhaNode(id: gerarIdUnico(), x: 0, y: 0),
+            TextButton.icon(
+              onPressed: () => cubit.iniciarPosicionamentoDeNovoNo(
+                LinhaNode(id: gerarIdUnico(), x: 0, y: 0),
+              ),
+              icon: const Icon(Icons.view_stream_outlined),
+              label: const Text('Linha'),
             ),
-            icon: const Icon(Icons.view_stream_outlined),
-            label: const Text('Linha'),
-          ),
-          TextButton.icon(
-            onPressed: () => abrirMenuSelecaoProduto(context, cubit),
-            icon: const Icon(Icons.add_box_outlined),
-            label: const Text('Produto'),
-          ),
-        ],
+            TextButton.icon(
+              onPressed: () => abrirMenuSelecaoProduto(context, cubit),
+              icon: const Icon(Icons.add_box_outlined),
+              label: const Text('Produto'),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -3,23 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>289817032686-7bnej8627d58qs5kafa6so05meoi2oht.apps.googleusercontent.com</string>
+	<string>899647823112-2lumlrqoh22fvrmpn22353k4tdck7h3q.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.289817032686-7bnej8627d58qs5kafa6so05meoi2oht</string>
-	<key>ANDROID_CLIENT_ID</key>
-	<string>289817032686-07cc95duthu8ncqr01v1qep7k7vnh3qf.apps.googleusercontent.com</string>
+	<string>com.googleusercontent.apps.899647823112-2lumlrqoh22fvrmpn22353k4tdck7h3q</string>
 	<key>API_KEY</key>
-	<string>AIzaSyCK4p-3WBYkQnpRf_xk6RBsgu4Xal63_tA</string>
+	<string>AIzaSyD0Z7XQ5ounsN6e5s4sdQitw3Z517i8Ms0</string>
 	<key>GCM_SENDER_ID</key>
-	<string>289817032686</string>
+	<string>899647823112</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>br.app.incasa.projetoIncasaApp</string>
 	<key>PROJECT_ID</key>
-	<string>incasa-f0d5a</string>
+	<string>incasa-app-auth-321</string>
 	<key>STORAGE_BUCKET</key>
-	<string>incasa-f0d5a.firebasestorage.app</string>
+	<string>incasa-app-auth-321.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:289817032686:ios:f79f9d9849bb717dd1c0ff</string>
+	<string>1:899647823112:ios:8976be19fa1e59da4d60bd</string>
 </dict>
 </plist>

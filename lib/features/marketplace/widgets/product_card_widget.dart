@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/theme/theme_cubit.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/domain/entities/marketplace/product.dart';
 
 /// Widget para exibir um produto em forma de Card
@@ -11,8 +12,9 @@ class ProductCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return NeumorphicSurface(
       margin: const EdgeInsets.only(bottom: 12),
+      borderRadius: BorderRadius.circular(16),
       child: ListTile(
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -21,11 +23,14 @@ class ProductCardWidget extends StatelessWidget {
             width: 60,
             height: 60,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               width: 60,
               height: 60,
-              color: Colors.grey[300],
-              child: const Icon(Icons.image_not_supported),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Icon(
+                Icons.image_not_supported,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ),

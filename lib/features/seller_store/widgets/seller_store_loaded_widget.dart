@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/widgets/design/design_avatar_widget.dart';
 import 'package:incasa_app/core/widgets/design/design_format.dart';
 import 'package:incasa_app/core/widgets/design/design_thumb_widget.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/seller_store/cubit/seller_store_cubit.dart';
 import 'package:incasa_app/features/seller_store/cubit/seller_store_state.dart';
 
@@ -81,8 +82,8 @@ class SellerStoreLoadedWidget extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        Card(
-          clipBehavior: Clip.antiAlias,
+        NeumorphicSurface(
+          borderRadius: BorderRadius.circular(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -124,14 +125,14 @@ class SellerStoreLoadedWidget extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: store.moreProducts.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final product = store.moreProducts[index];
               return SizedBox(
                 width: 118,
-                child: Card(
-                  clipBehavior: Clip.antiAlias,
+                child: NeumorphicSurface(
                   margin: EdgeInsets.zero,
+                  borderRadius: BorderRadius.circular(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

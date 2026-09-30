@@ -1,4 +1,6 @@
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/features/address/cubit/address_cubit.dart';
@@ -26,14 +28,14 @@ class _CpfRegistrationStepState extends State<CpfRegistrationStep> {
   void _saveCpf(BuildContext context) {
     final cpf = _cpfController.text.trim();
 
-    if (!CpfValidator.isValid(cpf)) {
+    if (!CPFValidator.isValid(cpf)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Digite um CPF válido')));
       return;
     }
 
-    context.read<OnboardingCubit>().saveCpf(CpfValidator.strip(cpf));
+    context.read<OnboardingCubit>().saveCpf(CPFValidator.strip(cpf));
   }
 
   @override
@@ -72,17 +74,16 @@ class _CpfRegistrationStepState extends State<CpfRegistrationStep> {
 
                 // Ícone
                 Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
+                  child: NeumorphicSurface(
+                    constraints: const BoxConstraints.tightFor(
+                      width: 80,
+                      height: 80,
                     ),
+                    borderRadius: BorderRadius.circular(40),
                     child: Icon(
                       Icons.badge_outlined,
                       size: 40,
-                      color: Theme.of(context).primaryColor,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 ),

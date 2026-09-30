@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
 import 'package:incasa_app/core/shell/app_shell_cubit.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/auth/cubit/auth_cubit.dart';
 import 'package:incasa_app/features/auth/cubit/auth_state.dart';
 import 'package:incasa_app/features/chat/view/chat_view.dart';
 import 'package:incasa_app/features/home/view/home_view.dart';
-import 'package:incasa_app/features/marketplace/view/marketplace_view.dart';
 import 'package:incasa_app/features/my_store/view/my_store_view.dart';
 import 'package:incasa_app/features/onboarding/cubit/onboarding_cubit.dart';
 import 'package:incasa_app/features/onboarding/view/onboarding_view.dart';
@@ -17,10 +17,8 @@ import 'package:incasa_app/features/profile/view/profile_view.dart';
 
 /// Shell principal do app com BottomNavigationBar.
 ///
-/// PROVISÓRIO: 5 tabs — Início e Chat do novo design (design_handoff_incasa)
-/// + Vitrine, Minha Loja e Perfil atuais. O "Vender" (wizard) virou a 3ª tab
-/// interna do Minha Loja; a busca vive no campo do Início; o novo Perfil foi
-/// descartado.
+/// Navegação principal: Início, Minha Loja, Chat e Perfil. O "Vender" (wizard)
+/// fica na aba Adicionar de Minha Loja; a busca vive no campo do Início.
 /// Stateful apenas pelo guard do onboarding; a tab selecionada vive no
 /// AppShellCubit.
 class AppShell extends StatefulWidget {
@@ -83,46 +81,49 @@ class _AppShellState extends State<AppShell> {
         bloc: sl<AppShellCubit>(),
         builder: (context, shellState) {
           return Scaffold(
-            appBar: AppBar(title: const Text('InCasa'), centerTitle: true),
+            appBar: AppBar(title: const Text('inCasa'), centerTitle: true),
             body: IndexedStack(
               index: shellState.selectedIndex,
-              children: const [
+              children: [
                 // Novo design (design_handoff_incasa)
-                HomeView(),
-                MarketplaceView(),
-                MyStoreView(),
-                ChatView(),
-                ProfileView(),
+                const HomeView(),
+                MyStoreView(key: ValueKey(shellState.selectedIndex == 1)),
+                const ChatView(),
+                const ProfileView(),
               ],
             ),
-            bottomNavigationBar: BottomNavigationBar(
-              currentIndex: shellState.selectedIndex,
-              onTap: (index) => sl<AppShellCubit>().selectTab(index),
-              type: BottomNavigationBarType.fixed,
-              selectedFontSize: 10,
-              unselectedFontSize: 9,
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home_outlined),
-                  label: 'Início',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.store),
-                  label: 'Vitrine',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.business),
-                  label: 'Minha Loja',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.chat_bubble_outline),
-                  label: 'Chat',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.person),
-                  label: 'Perfil',
-                ),
-              ],
+            bottomNavigationBar: NeumorphicSurface(
+              depth: 4,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              child: BottomNavigationBar(
+                currentIndex: shellState.selectedIndex,
+                onTap: (index) => sl<AppShellCubit>().selectTab(index),
+                type: BottomNavigationBarType.fixed,
+                selectedFontSize: 10,
+                unselectedFontSize: 9,
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.home_outlined),
+                    label: 'Início',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.business),
+                    label: 'Minha Loja',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.chat_bubble_outline),
+                    label: 'Chat',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.person),
+                    label: 'Perfil',
+                  ),
+                ],
+              ),
             ),
           );
         },

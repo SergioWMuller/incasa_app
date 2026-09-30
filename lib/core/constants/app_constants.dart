@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String appName = 'InCasa';
+  static const String appName = 'inCasa';
   static const String appVersion = '1.0.0';
 
   // Pagination

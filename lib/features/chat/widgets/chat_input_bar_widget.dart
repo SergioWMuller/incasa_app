@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:incasa_app/core/di/injection_container.dart';
+import 'package:incasa_app/core/widgets/design/neumorphic_surface.dart';
 import 'package:incasa_app/features/chat/cubit/chat_cubit.dart';
 
 /// Barra de digitação da conversa (tela 05 do handoff).
@@ -29,8 +30,10 @@ class _ChatInputBarWidgetState extends State<ChatInputBarWidget> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: NeumorphicSurface(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+        borderRadius: BorderRadius.circular(24),
         child: Row(
           children: [
             Expanded(

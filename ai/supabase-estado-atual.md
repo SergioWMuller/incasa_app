@@ -171,7 +171,37 @@ Valida formato (11 dígitos), confere `app.pii_key`, grava `cpf_hmac` + `cpf_enc
 
 `GRANT EXECUTE TO authenticated, service_role`.
 
-### 3.4 Triggers utilitários
+### 3.4 `get_registration_info() → jsonb`
+
+Alimenta a tela "Dados da Conta" (`RegistrationView`). Sem parâmetros: o usuário vem do JWT via `app_user_id()`.
+
+```json
+{
+  "email": "maria@gmail.com",
+  "phone": {
+    "country_code": "55", "area_code": "41", "number": "998123489",
+    "full_number": "5541998123489", "has_whatsapp": true, "is_verified": false
+  },
+  "cpf": "123.***.**9-12"
+}
+```
+
+- **email** — `providers.email` **completo** (provider principal primeiro).
+- **phone** — objeto com o telefone **principal e ativo** de `phones`, **completo**. `null` se não houver.
+- **cpf** — **sempre mascarado no banco**: descriptografa `users.cpf_encrypted` com `app.pii_key` e mostra os 3 primeiros dígitos, o 9º e os 2 últimos. O CPF em texto puro nunca sai do Postgres.
+- Cada campo vem `null` quando o dado não está cadastrado.
+- Sem identidade (`app_user_id()` nulo) levanta exceção; falha se `app.pii_key` estiver ausente e houver CPF (fail-closed).
+
+E-mail e telefone vêm completos porque são dados do próprio usuário (RLS já permite ler `providers` e `phones` dele); se a UI quiser ocultá-los, a máscara é feita no app.
+
+`SECURITY DEFINER`, `STABLE`, `search_path = public, extensions`.
+`GRANT EXECUTE TO authenticated, service_role` — **negado para `anon` e `PUBLIC`**.
+
+Chamada: `POST /rest/v1/rpc/get_registration_info` com `apikey` + `Authorization: Bearer <JWT do Supabase>` e corpo `{}`.
+
+> Substitui, para a UI, `get_registration_masked()` (versão inicial, com e-mail/telefone mascarados) e `get_user_cpf_masked()` (formato antigo, ainda com EXECUTE para `anon`/`PUBLIC`). Ambas continuam no banco — **pendência: remover/revogar** quando nenhuma versão do app as usar.
+
+### 3.5 Triggers utilitários
 
 - `handle_primary_address()` / `handle_primary_provider()` — rebaixam outros principais do mesmo usuário ao marcar um novo.
 - `update_updated_at_column()` / `update_users_updated_at()` — atualizam `updated_at` em UPDATE.
@@ -307,4 +337,5 @@ END $$;
 | 004 | Policies por-usuário com `app_user_id()` (inertes enquanto "Allow all" existirem) | ✅ aplicada |
 | 005 | Função `set_user_cpf` para etapa 3 do onboarding | ✅ aplicada |
 | 006 | DROP "Allow all" — passo final de segurança | ⏳ pendente |
+| 007 | Função `get_registration_info()` (e-mail e telefone completos, CPF mascarado). Substitui `get_registration_masked()` | ✅ aplicada em 25/09/2026 — testada no nível do banco; falta teste HTTP com JWT real |
 
